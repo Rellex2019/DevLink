@@ -8,6 +8,7 @@ import Main from './pages/Main.vue';
 import Dashboard from './pages/Dashboard.vue';
 import Repository from './pages/Repository.vue';
 
+
 const router = createRouter({
     routes: [
     {
@@ -22,5 +23,10 @@ const router = createRouter({
 })
 
 const app = createApp(App);
+app.directive('focus', {
+    mounted(el) {
+        el.focus();
+    }
+});
 app.use(router);
 app.mount('#app');

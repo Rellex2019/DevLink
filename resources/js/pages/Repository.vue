@@ -26,10 +26,10 @@
                         </div>
                         <div class="repository-files">
                             <file-tree @main-folder="changeChoicedFolder" @choice-folder="changeChoicedFolder"
-                                @choice-file="openFile" @store-object="addObject" @remove-file="removeFile"
+                                @choice-file="openFile" @store-object="saveObject" @remove-file="removeFile"
                                 :choicedFile="selectedFile" :choicedFolder="choicedFolder" :fileTree="fileTree"
                                 @choice-element="changeUsedElement" :usedElement="usedElement"
-                                @show-context="showContextMenu" />
+                                @show-context="showContextMenu" :nameElement = "nameElement" />
                         </div>
                     </div>
                 </div>
@@ -60,7 +60,7 @@
         </div>
         <Modal :style="{ left: `${mouseX}px`, top: `${mouseY}px` }" :isVisible="showMenu">
             <div class="container-options" ref="containerOptions">
-                <div class="option" @click="changeFileName">Переименовать</div>
+                <div class="option" @click="openInputName">Переименовать</div>
                 <div class="option" @click="removeFile">Удалить</div>
             </div>
         </Modal>
@@ -75,6 +75,8 @@ import Content from '@/js/components/repository/Content.vue';
 import FileTree from '@/js/components/repository/FileTree.vue';
 import { onMounted, ref } from 'vue';
 import Modal from '@/js/components/modal/Modal.vue';
+import { v4 as uuidv4 } from 'uuid';
+
 //В БД БУДЕТ ЕЩЕ ОДНА СТРОКА УКАЗЫВАЮЩАЯ НА ID ПРОЕКТА
 const files = ref([
     {
@@ -184,6 +186,9 @@ const updatedContent = ref([]);
 const usedElement = ref(null);
 const fileTree = ref([]);
 
+const nameElement = ref('');
+
+
 const containerOptions = ref(null);
 let showMenu = ref(false);
 let mouseX = ref(0);
@@ -192,10 +197,11 @@ let mouseY = ref(0);
 
 //Добавление, удаление папок и файлов
 // КОГДА БУДЕТ БД ОБЯЗАТЕЛЬНО НАДО СДЕЛАТЬ ТАК ЧТОБЫ
-// id строка была убрана, а после добавления данных в бд addObject
+// id строка была убрана, а после добавления данных в бд saveObject
 // запросить новые данные из бд 
 function addObjectArea(type) {
     const exists = files.value.some(file => file.type === "addfile" || file.type === "addfolder");
+    removeInputs();
     if (!exists) {
         createInput();
     }
@@ -207,28 +213,28 @@ function addObjectArea(type) {
     fileTree.value = buildFileTree(files.value);
 
 
-    function createInput()
-    {
+    function createInput() {
         if (type === 'file') {
             files.value.push({
-                "id": 1000,
-                'name': 'new',
+                "id": uuidv4(),
+                'name': '',
                 "type": "addfile",
                 "parent_id": choicedFolder.value ? choicedFolder.value : null,
             });
         }
         if (type === 'folder') {
             files.value.push({
-                'id': 1001,
-                'name': 'new',
+                'id': uuidv4(),
+                'name': '',
                 "type": "addfolder",
                 "parent_id": choicedFolder.value ? choicedFolder.value : null,
             });
         }
+        nameElement.value = '';
     }
 
 }
-function addObject(newObject) {
+function saveObject(newObject) {
     files.value = files.value.map(file => {
         if (file.id === newObject.id) {
             return {
@@ -249,35 +255,72 @@ function removeFile() {
     showMenu.value = false;
 }
 
-function changeFileName() {
+function openInputName() {
 
+    removeInputs();
+    files.value = files.value.map(file => {
+        if (file.id === usedElement.value && file.type === 'folder') {
+            nameElement.value = file.name;
+            return {
+                ...file,
+                "type": 'changefolder'
+            }
+        }
+        else if (file.id === usedElement.value && file.type === 'file') {
+            nameElement.value = file.name;
+            return {
+                ...file,
+                "type": 'changefile'
+            }
+        }
+        return file;
+    });
+    showMenu.value =false;
+    fileTree.value = buildFileTree(files.value, null, false);
 }
 
+function removeInputs()
+{
+    files.value = files.value.map(file => {
+            if(file.type === 'changefolder')
+            return {
+                ...file,
+                'type':'folder'
+                
+            }
+            else if(file.type === 'changefile')
+            return {
+                ...file,
+                'type':'file'
+            }
+        return file;
+    });
+
+}
 //
 
 //Создание иерархической  структуры файлов и папок
 
 
-function buildFileTree(filesLocal = files.value, parentId = null) {
+function buildFileTree(filesLocal = files.value, parentId = null, sort = true) {
     const fileTree = [];
-
-
-    filesLocal.sort((a, b) => {
-        if (a.type === 'folder' && b.type !== 'folder') {
-            return -1;
-        }
-        if (a.type !== 'folder' && b.type === 'folder') {
-            return 1;
-        }
-        if (a.parent_id === null && b.parent_id !== null) {
-            return -1;
-        }
-        if (a.parent_id !== null && b.parent_id === null) {
-            return 1;
-        }
-        return a.parent_id - b.parent_id;
-    });
-
+    if (sort) {
+        filesLocal.sort((a, b) => {
+            if (a.type === 'folder' && b.type !== 'folder') {
+                return -1;
+            }
+            if (a.type !== 'folder' && b.type === 'folder') {
+                return 1;
+            }
+            if (a.parent_id === null && b.parent_id !== null) {
+                return -1;
+            }
+            if (a.parent_id !== null && b.parent_id === null) {
+                return 1;
+            }
+            return a.parent_id - b.parent_id;
+        });
+    }
     filesLocal.forEach(file => {
         if (file.parent_id === parentId) {
             const fileNode = {
@@ -285,7 +328,7 @@ function buildFileTree(filesLocal = files.value, parentId = null) {
                 name: file.name,
                 type: file.type,
                 parent_id: file.parent_id,
-                children: buildFileTree(files.value, file.id)
+                children: buildFileTree(files.value, file.id, sort)
             };
             fileTree.push(fileNode);
         }

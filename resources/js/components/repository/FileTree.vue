@@ -8,21 +8,28 @@
                     <div class="container-content">
                         <div class="container-svg">
                             <img ref="arrowSvg" src="@/svg/arrow-folder.svg"
-                                v-if="item.type === 'folder' || item.type === 'addfolder'" class="arrow-svg"
-                                alt="Стрелка папки">
+                                v-if="item.type === 'folder' || item.type === 'addfolder' || item.type === 'changefolder'"
+                                class="arrow-svg" alt="Стрелка папки">
                             <img src="@/svg/file.svg" class="file-svg"
-                                v-if="item.type === 'file' || item.type === 'addfile'" alt="Файл">
-                            <input v-if="item.type === 'addfile' || item.type === 'addfolder'" v-model="inputContent"
-                                @keydown.enter="addObject(item)" type="text">
+                                v-if="item.type === 'file' || item.type === 'addfile' || item.type === 'changefile'"
+                                alt="Файл">
+                            <input class="name input"
+                                v-if="item.type === 'addfile' || item.type === 'addfolder' || item.type === 'changefolder' || item.type === 'changefile'"
+                                v-focus v-model="inputContent" @keydown.enter="saveObject(item)" @focus="inputContent = nameElementLocal" @blur="saveObject(item)"
+                             type="text">
                         </div>
-                        <span class="name">{{ item.name }}</span>
+                        <span
+                            v-if="item.type !== 'addfolder' && item.type !== 'addfile' && item.type !== 'changefolder' && item.type !== 'changefile'"
+                            class="name">{{ item.name
+                            }}</span>
                     </div>
                 </div>
                 <div ref="children" style="display: none;" :class="{ 'folder': item.type === 'folder' }">
                     <file-tree v-if="item.type === 'folder'" :choicedFile="choicedFileLocal"
                         :choicedFolder="choicedFolderLocal" :key="item.id" :fileTree="item.children"
                         @store-object="setobject" @remove-file="removeFile" @choice-folder="handleChoiceFolder"
-                        @choice-file="handleChoiceFile"  @choice-element="changeUsedElement" :usedElement ="usedElement" @show-context="showContextMenu"/>
+                        @choice-file="handleChoiceFile" @choice-element="changeUsedElement" :usedElement="usedElement"
+                        :nameElement="nameElementLocal" @show-context="showContextMenu"/>
                 </div>
             </button>
         </div>
@@ -38,6 +45,7 @@ export default {
         return {
             choicedFolderLocal: ref(),
             inputContent: ref(),
+            nameElementLocal: ref(),
             choicedFileLocal: ref(),
             usedElementLocal: null,
             fileTreeLocal: ref(),
@@ -53,9 +61,13 @@ export default {
         choicedFile(content) {
             this.choicedFileLocal = content;
         },
-        usedElement(content){
+        usedElement(content) {
             this.usedElementLocal = content;
-        }
+        },
+        nameElement(content) {
+            this.nameElementLocal = content;
+        },
+
     },
     mounted() {
         this.fileTreeLocal = this.fileTree;
@@ -72,7 +84,11 @@ export default {
         choicedFile: {
             required: false
         },
-        usedElement:{
+        usedElement: {
+            required: false
+        },
+        nameElement: {
+            type: String,
             required: false
         }
     },
@@ -110,8 +126,8 @@ export default {
         },
 
 
-        
-        changeUsedElement(id){
+
+        changeUsedElement(id) {
             this.$emit('choice-element', id);
             this.usedElementLocal = id;
         },
@@ -119,17 +135,8 @@ export default {
             this.$emit('remove-file', this.usedElementLocal);
 
         },
-        changeFileName()
-        {
 
-            const newobject = {
-                "id": this.usedElementLocal,
-                "name": this.inputContent,
-                "type": 'addfile',
-                "parent_id": item.parent_id
-            }
-            this.$emit('store-object', newobject);
-        },
+
         handleChoiceFile(id) {
             this.changeUsedElement(null);
             this.$emit('choice-file', id);
@@ -144,8 +151,10 @@ export default {
         setobject(object) {
             this.$emit('store-object', object);
         },
-        addObject(item) {
-            const type = item.type == "addfile" ? 'file' : 'folder';
+        saveObject(item) {
+            const type = 
+            item.type == "addfile" || item.type == 'changefile' ? 'file': 'folder'
+            
             const newobject = {
                 "id": item.id,
                 "name": this.inputContent,
@@ -153,13 +162,11 @@ export default {
                 "parent_id": item.parent_id
             }
             this.$emit('store-object', newobject);
-            this.inputContent = '';
         }
     }
 }
 </script>
 <style scoped>
-
 .item {
     border: none;
     background: none;
@@ -167,9 +174,19 @@ export default {
 }
 
 .name {
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
     font-size: 1rem;
     font-family: 'Fira Code';
     color: #F8F9FA;
+}
+
+.input {
+    margin-left: 15px;
+    height: 20px;
+    outline: none;
+    border: 3px solid #202123;
+    background-color: #4f5157;
 }
 
 .folder {
@@ -192,7 +209,7 @@ export default {
 }
 
 .usedElement {
-    background-color: #656A6F;
+    background-color: #656a6f63;
 }
 
 .choicedFolder {
@@ -203,7 +220,7 @@ export default {
 
 .container-svg {
     display: flex;
-    align-content: center;
+    align-items: center;
     width: 15px;
     margin-right: 5px;
 }
