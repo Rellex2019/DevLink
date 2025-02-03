@@ -6,13 +6,12 @@
 
 <script>
 import Header from './components/Header.vue';
-import Repository from './pages/Repository.vue';
 
 
 export default {
     name: 'App',
     components:{
-        Header
+        Header,
     }
 };
 

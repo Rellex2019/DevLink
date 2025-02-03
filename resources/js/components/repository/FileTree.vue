@@ -15,8 +15,8 @@
                                 alt="Файл">
                             <input class="name input"
                                 v-if="item.type === 'addfile' || item.type === 'addfolder' || item.type === 'changefolder' || item.type === 'changefile'"
-                                v-focus v-model="inputContent" @keydown.enter="saveObject(item)" @focus="inputContent = nameElementLocal" @blur="saveObject(item)"
-                             type="text">
+                                v-focus v-model="inputContent" @keydown.enter="checkValidation(item)"
+                                @focus="inputContent = nameElementLocal" @blur="checkValidation(item)" type="text">
                         </div>
                         <span
                             v-if="item.type !== 'addfolder' && item.type !== 'addfile' && item.type !== 'changefolder' && item.type !== 'changefile'"
@@ -29,7 +29,7 @@
                         :choicedFolder="choicedFolderLocal" :key="item.id" :fileTree="item.children"
                         @store-object="setobject" @remove-file="removeFile" @choice-folder="handleChoiceFolder"
                         @choice-file="handleChoiceFile" @choice-element="changeUsedElement" :usedElement="usedElement"
-                        :nameElement="nameElementLocal" @show-context="showContextMenu"/>
+                        :nameElement="nameElementLocal" @show-context="showContextMenu" />
                 </div>
             </button>
         </div>
@@ -131,8 +131,8 @@ export default {
             this.$emit('choice-element', id);
             this.usedElementLocal = id;
         },
-        removeFile() {
-            this.$emit('remove-file', this.usedElementLocal);
+        removeFile(id = this.usedElementLocal) {
+            this.$emit('remove-file', id);
 
         },
 
@@ -151,10 +151,24 @@ export default {
         setobject(object) {
             this.$emit('store-object', object);
         },
+
+
+        checkValidation(item) {
+            if (!this.inputContent || this.inputContent.length < 1) {
+                this.$showAlert('Длина файла не может быть меньше 1 символа', 'error');
+                if (item.type == 'addfile' || item.type == 'addfolder') {
+                    this.removeFile(item.id);
+                }
+            }
+            else {
+                this.saveObject(item);
+            }
+
+        },
         saveObject(item) {
-            const type = 
-            item.type == "addfile" || item.type == 'changefile' ? 'file': 'folder'
-            
+            const type =
+                item.type == "addfile" || item.type == 'changefile' ? 'file' : 'folder'
+
             const newobject = {
                 "id": item.id,
                 "name": this.inputContent,

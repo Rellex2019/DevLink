@@ -29,7 +29,7 @@
                                 @choice-file="openFile" @store-object="saveObject" @remove-file="removeFile"
                                 :choicedFile="selectedFile" :choicedFolder="choicedFolder" :fileTree="fileTree"
                                 @choice-element="changeUsedElement" :usedElement="usedElement"
-                                @show-context="showContextMenu" :nameElement = "nameElement" />
+                                @show-context="showContextMenu" :nameElement="nameElement" />
                         </div>
                     </div>
                 </div>
@@ -38,7 +38,7 @@
                 <div class="active-block-flex" ref="scrollBlock" @wheel="handleScroll">
                     <File v-for="elem in inActiveBar" :key="elem.id" @select="selectFile(elem.id)"
                         @read-content="contentFileShow" :is-active="selectedFile === elem.id" :file="elem"
-                        @close-file="closeFile" :updatedContent="updatedContent[elem.id]" />
+                        @close-file="closeFile" :updatedContent="updatedContent[elem.id]" :fileTree="fileTree" />
                 </div>
 
                 <div class="container-inner-file">
@@ -61,7 +61,7 @@
         <Modal :style="{ left: `${mouseX}px`, top: `${mouseY}px` }" :isVisible="showMenu">
             <div class="container-options" ref="containerOptions">
                 <div class="option" @click="openInputName">Переименовать</div>
-                <div class="option" @click="removeFile">Удалить</div>
+                <div class="option" @click="removeFile()">Удалить</div>
             </div>
         </Modal>
     </div>
@@ -75,7 +75,6 @@ import Content from '@/js/components/repository/Content.vue';
 import FileTree from '@/js/components/repository/FileTree.vue';
 import { onMounted, ref } from 'vue';
 import Modal from '@/js/components/modal/Modal.vue';
-import { v4 as uuidv4 } from 'uuid';
 
 //В БД БУДЕТ ЕЩЕ ОДНА СТРОКА УКАЗЫВАЮЩАЯ НА ID ПРОЕКТА
 const files = ref([
@@ -216,7 +215,7 @@ function addObjectArea(type) {
     function createInput() {
         if (type === 'file') {
             files.value.push({
-                "id": uuidv4(),
+                "id": Date.now(),
                 'name': '',
                 "type": "addfile",
                 "parent_id": choicedFolder.value ? choicedFolder.value : null,
@@ -224,7 +223,7 @@ function addObjectArea(type) {
         }
         if (type === 'folder') {
             files.value.push({
-                'id': uuidv4(),
+                'id': Date.now(),
                 'name': '',
                 "type": "addfolder",
                 "parent_id": choicedFolder.value ? choicedFolder.value : null,
@@ -244,12 +243,12 @@ function saveObject(newObject) {
         }
         return file;
     });
-    fileTree.value = buildFileTree(files.value);
+    fileTree.value = buildFileTree(files.value, null, true);
 }
 
 //Удаление
-function removeFile() {
-    const id = usedElement.value;
+function removeFile(usedId) {
+    const id = usedId ? usedId : usedElement.value;
     files.value = files.value.filter(file => file.id != id);
     fileTree.value = buildFileTree(files.value);
     showMenu.value = false;
@@ -275,23 +274,22 @@ function openInputName() {
         }
         return file;
     });
-    showMenu.value =false;
+    showMenu.value = false;
     fileTree.value = buildFileTree(files.value, null, false);
 }
 
-function removeInputs()
-{
+function removeInputs() {
     files.value = files.value.map(file => {
-            if(file.type === 'changefolder')
+        if (file.type === 'changefolder')
             return {
                 ...file,
-                'type':'folder'
-                
+                'type': 'folder'
+
             }
-            else if(file.type === 'changefile')
+        else if (file.type === 'changefile')
             return {
                 ...file,
-                'type':'file'
+                'type': 'file'
             }
         return file;
     });
@@ -318,7 +316,16 @@ function buildFileTree(filesLocal = files.value, parentId = null, sort = true) {
             if (a.parent_id !== null && b.parent_id === null) {
                 return 1;
             }
-            return a.parent_id - b.parent_id;
+            const isAEnglish = /^[a-zA-Z0-9]/.test(a.name);
+            const isBEnglish = /^[a-zA-Z0-9]/.test(b.name);
+
+            if (isAEnglish && !isBEnglish) {
+                return -1; // a перед b, если a - английское
+            }
+            if (!isAEnglish && isBEnglish) {
+                return 1; // b перед a, если b - английское
+            }
+            return a.name.localeCompare(b.name);
         });
     }
     filesLocal.forEach(file => {
@@ -608,6 +615,13 @@ onMounted(() => {
 .active-block-flex::-webkit-scrollbar-thumb:hover {
     background: #EDB200;
 }
+
+.container-options {
+    display: flex;
+    flex-direction: column;
+}
+
+.options {}
 
 /* 
 .active-block {

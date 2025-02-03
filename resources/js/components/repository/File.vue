@@ -30,10 +30,12 @@ import fileSvg from '@/svg/file.svg';
 const props = defineProps({
     file:{
         type: Object,
-        required: false
+        required: true
     },
-
-
+    fileTree:{
+        type: Array,
+        required: true
+    },
     isActive: Boolean,
     updatedContent: String,
 })
@@ -43,10 +45,16 @@ let isVisible = ref(true);
 let activeBlock = ref(null);
 const fileData = ref();
 
+const fileTree = ref(props.fileTree);
+
 const updatedScript = ref(props.updatedContent);
 
 watch(() => props.updatedContent, (newContent) => {
     updatedScript.value = newContent;
+});
+watch(() => props.fileTree, (newContent) => {
+    checkExists(fileTree.value ,newContent);
+    fileTree.value = newContent;
 });
 watch(() => props.file, (newContent) => {
     fileData.value = newContent;
@@ -64,14 +72,46 @@ function choiceFile() {
     }
     // activeBlock.value.style.backgroundColor= "#202123";
 }
-function closeFile() {
+function closeFile(usedId) {
     isVisible.value = false;
+    const id = usedId? usedId : fileData.value.id;
     setTimeout(()=>{
         emit('read-content', '',null);
-        emit('close-file', fileData.value.id);
+        emit('close-file', id);
     }, 400)
 
 }
+
+
+function extractIds(fileTree)
+{
+    const ids = [];
+    fileTree.forEach(file => {
+        ids.push(file.id);
+        if(file.children && file.children.length > 0) {
+            ids.push(...extractIds(file.children));
+        }
+    });
+    return ids;
+}
+
+function checkExists(oldFileTree, newFileTree){
+
+    const oldIds = extractIds(oldFileTree);
+    const newIds = extractIds(newFileTree);
+
+    const deletedFiles = oldIds.filter(id => !newIds.includes(id));
+
+    deletedFiles.forEach(deletedId => {
+        if (deletedId === fileData.value.id) {
+            closeFile(fileData.value.id); 
+        }
+    });
+}
+
+
+
+
 
 function splitTitle() {
     let title = fileData.value.name;
