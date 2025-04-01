@@ -1,0 +1,35 @@
+
+@font-face {
+    font-family: Roboto;
+    src: url('@/fonts/Roboto-Regular.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: Montserrat;
+    src: url('@/fonts/Montserrat-Regular.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: Montserrat;
+    src: url('@/fonts/Montserrat-Light.ttf');
+    font-weight: light;
+    font-style: normal;
+}
+@font-face {
+    font-family: Fira Code;
+    src: url('@/fonts/FiraCode-Regular.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+*{
+    margin: 0;
+    padding: 0;
+
+
+}
+body{
+    overflow-x: hidden;
+    width: 100vw;
+}
