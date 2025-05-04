@@ -4,6 +4,11 @@ import _ from 'lodash';
 import axios from 'axios';
 
 window._ = _; // Присваиваем Lodash глобальной переменной
+
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+
+
 window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';

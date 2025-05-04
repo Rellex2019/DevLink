@@ -1,6 +1,6 @@
 
 <template>
-<Header/>
+<Header v-if="$route.path != '/registration' && $route.path != '/login'" />
 <router-view />
 </template>
 

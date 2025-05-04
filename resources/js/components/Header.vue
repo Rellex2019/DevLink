@@ -17,7 +17,7 @@
                     </svg>
 
                     <Modal :isVisible="isPlusVisible" class="modal-plus">
-                        <a href="#" class="option-modal" ref="optionModal">
+                        <router-link :to="{name:'createRepository'}" class="option-modal" ref="optionModal">
                             <div class="option-svg-container">
                                 <svg width="21" height="21" class="option-svg" viewBox="0 0 21 21" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -26,8 +26,8 @@
                                 </svg>
                             </div>
                             <div class="option-name">Новый репозиторий</div>
-                        </a>
-                        <a href="#" class="option-modal">
+                        </router-link>
+                        <router-link :to="'/task/create'" class="option-modal">
                             <div class="option-svg-container">
                                 <svg width="20" height="20" class="option-svg" viewBox="0 0 20 20" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -38,8 +38,8 @@
 
                             </div>
                             <div class="option-name">Создать задачу</div>
-                        </a>
-                        <a href="#" class="option-modal" id="border-none">
+                        </router-link>
+                        <router-link :to="{name:'createTeam'}" class="option-modal" id="border-none">
                             <svg width="32" height="16" class="option-svg" viewBox="0 0 32 16" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path class="option-svg"
@@ -57,7 +57,7 @@
                             </svg>
 
                             <div class="option-name">Создать команду</div>
-                        </a>
+                        </router-link>
                     </Modal>
                 </div>
 

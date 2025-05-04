@@ -16,7 +16,7 @@
                         </div>
                         <div class="repository-action">
                             <div class="repository-name" :class="{ 'selected': choicedFolder == null }"
-                                @click="choicedFolder = null">FLbanksfdsdfsdfdsfsdfsdfs</div>
+                                @click="choicedFolder = null">{{ route.params.repositoryName }}</div>
                             <div class="container-svg">
                                 <button class="btn-add" @click="addObjectArea('file')"><img class="file-add-svg"
                                         src="@/svg/file-add.svg" alt="Добавить файл"></button>
@@ -43,7 +43,7 @@
 
                 <div class="container-inner-file">
                     <div class="inner-file">
-                        <Content @update-content="contentFileUpdate" :content="contentFile" :id="selectedFile"/>
+                        <Content @update-content="contentFileUpdate" :content="contentFile" :id="selectedFile" />
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
         <Modal :style="{ left: `${mouseX}px`, top: `${mouseY}px` }" :isVisible="showMenu">
             <div class="container-options" ref="containerOptions">
                 <div class="option" @click="openInputName">Переименовать</div>
-                <div class="option last"  @click="removeFile()">Удалить</div>
+                <div class="option last" @click="removeFile()">Удалить</div>
             </div>
         </Modal>
     </div>
@@ -75,105 +75,12 @@ import Content from '@/js/components/repository/Content.vue';
 import FileTree from '@/js/components/repository/FileTree.vue';
 import { onMounted, ref } from 'vue';
 import Modal from '@/js/components/modal/Modal.vue';
+import axios from 'axios';
+import { useRoute } from 'vue-router';
 
 //В БД БУДЕТ ЕЩЕ ОДНА СТРОКА УКАЗЫВАЮЩАЯ НА ID ПРОЕКТА
-const files = ref([
-    {
-        "id": 1,
-        "name": "Проект",
-        "type": "folder",
-        "parent_id": null
-    },
-    {
-        "id": 2,
-        "name": "Папка 1",
-        "type": "folder",
-        "parent_id": 1
-    },
-    {
-        "id": 25,
-        "name": "Папка cor",
-        "type": "folder",
-        "parent_id": null
-    },
-    {
-        "id": 32,
-        "name": "Папка cor",
-        "type": "folder",
-        "parent_id": null
-    },
-    {
-        "id": 33,
-        "name": "Папка cor",
-        "type": "folder",
-        "parent_id": null
-    },
-    {
-        "id": 3,
-        "name": "Файл 1.txt",
-        "type": "file",
-        "parent_id": 2
-    },
-    {
-        "id": 4,
-        "name": "Папка 2",
-        "type": "folder",
-        "parent_id": 1
-    },
-    {
-        "id": 5,
-        "name": "Файл 2.txt",
-        "type": "file",
-        "content": 'asdassdadad',
-        "parent_id": 4
-    },
-    {
-        "id": 19,
-        "name": "Файл 1123.txt",
-        "type": "file",
-        "content": '21312312313213',
-        "parent_id": 2
-    },
-    {
-        "id": 22,
-        "name": "Файлkk.txt",
-        "type": "file",
-        "content": '21a#$*@$&@#$&2313213',
-        "parent_id": 2
-    },
-    {
-        "id": 30,
-        "name": "Файлooo.txt",
-        "type": "file",
-        "content": '2131asdasdasdads',
-        "parent_id": 2
-    },
-    {
-        "id": 18,
-        "name": "Файuu.txt",
-        "type": "folder",
-        "parent_id": 2
-    },
-    {
-        "id": 37,
-        "name": "Файuu.txt",
-        "type": "folder",
-        "parent_id": 18
-    },
-
-    {
-        "id": 10,
-        "name": "Файлdasdad.txt",
-        "type": "file",
-        "parent_id": 18
-    },
-    {
-        "id": 29,
-        "name": "Файuu.txt",
-        "type": "folder",
-        "parent_id": 4
-    },
-]);
+const projectId = ref(null);
+const files = ref([]);
 const inActiveBar = ref([]);
 
 
@@ -193,11 +100,22 @@ let showMenu = ref(false);
 let mouseX = ref(0);
 let mouseY = ref(0);
 
+const route = useRoute()
+
 
 //Добавление, удаление папок и файлов
 // КОГДА БУДЕТ БД ОБЯЗАТЕЛЬНО НАДО СДЕЛАТЬ ТАК ЧТОБЫ
 // id строка была убрана, а после добавления данных в бд saveObject
 // запросить новые данные из бд 
+function fetchFiles() {
+    axios.get(`/files/${route.params.user}/${route.params.repositoryName}`)
+        .then(response => {
+            files.value = response.data.files;
+            projectId.value = response.data.project_id;
+            fileTree.value = buildFileTree(files.value);
+        })
+}
+
 function addObjectArea(type) {
     const exists = files.value.some(file => file.type === "addfile" || file.type === "addfolder");
     removeInputs();
@@ -233,7 +151,9 @@ function addObjectArea(type) {
     }
 
 }
-function saveObject(newObject) {
+function saveObject(newObject, type) {
+    console.log(type);
+    console.log(newObject);
     files.value = files.value.map(file => {
         if (file.id === newObject.id) {
             return {
@@ -422,7 +342,8 @@ function handleClickOut(event) {
 
 
 onMounted(() => {
-    fileTree.value = buildFileTree(files.value);
+    fetchFiles();
+
 });
 </script>
 
@@ -441,7 +362,6 @@ onMounted(() => {
 
 .container-repository-block {
     width: 100%;
-
 }
 
 .repository-block {
@@ -626,7 +546,8 @@ onMounted(() => {
     padding: 5px 0px;
     font-family: 'Montserrat';
 }
-.option.last{
+
+.option.last {
     border: none
 }
 

@@ -8,8 +8,16 @@ class Project extends Model
 {
     protected $fillable = [
         'name',
-        'description'
+        'description',
+        'owner_name',
+        'access'
     ];
+    
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_name', 'name');
+    }
+    
     public function teams()
     {
         return $this->belongsToMany(Team::class);

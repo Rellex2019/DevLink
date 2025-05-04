@@ -2,26 +2,15 @@ import './bootstrap'
 import { createApp } from 'vue';
 import App from './App.vue';
 
-import { createRouter, createWebHistory } from 'vue-router';
+import store from './store';
+
+import router from './router';
+
 import alertPlugin from './plugins/alertPlugin';
 
-import Main from './pages/Main.vue';
-import Dashboard from './pages/Dashboard.vue';
-import Repository from './pages/Repository.vue';
 
 
-const router = createRouter({
-    routes: [
-    {
-        path: '/', 
-        component: Main
-    },
-    {
-        path:'/repository',
-        component: Repository
-    }], 
-    history: createWebHistory()
-})
+store.commit('authStore/initializeStore');
 
 const app = createApp(App);
 
@@ -31,6 +20,8 @@ app.directive('focus', {
     }
 });
 
+
+app.use(store);
 app.use(alertPlugin);
 app.use(router);
 app.mount('#app');

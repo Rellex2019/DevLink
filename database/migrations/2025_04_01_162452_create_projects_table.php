@@ -17,6 +17,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
+            $table->string('owner_name');
+            $table->foreign('owner_name')->references('name')->on('users')->onDelete('cascade');
+            
+            $table->enum('access', ['private', 'public'])->default('public');
             $table->timestamps();
         });
     }

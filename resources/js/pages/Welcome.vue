@@ -2,7 +2,7 @@
     <div class="outer-padding">
         <div class="container-main-block">
             <div class="main-block">
-                Main
+                Welcome
             </div>
         </div>
     </div>
@@ -10,7 +10,12 @@
     </template>
     <script>
     export default{
-        name:'Main',
+        name:'Welcome',
+        data()
+        {
+            return{
+            }
+        },
     }
     </script>
     <style>

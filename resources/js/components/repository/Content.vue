@@ -1,6 +1,5 @@
 <template>
     <div  ref="editorContainer" class="code-editor"></div>
-    <div>Выберите файл</div>
   </template>
   
   <script setup>

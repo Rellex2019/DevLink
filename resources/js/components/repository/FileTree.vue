@@ -170,7 +170,7 @@ export default {
                 "type": type,
                 "parent_id": item.parent_id
             }
-            this.$emit('store-object', newobject);
+            this.$emit('store-object', newobject, item.type);
         }
     }
 }
