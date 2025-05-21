@@ -1,3 +1,4 @@
+import Cookies from 'js-cookie';
 
 const authStore = {
     namespaced: true,
@@ -9,30 +10,32 @@ const authStore = {
         setUser(state, user) {
             state.isAuthenticated = true;
             state.user = user;
-            localStorage.setItem('user', JSON.stringify(user));
-            localStorage.setItem('isAuthenticated', true);
+            // Устанавливаем куки на 3 дня (259200 секунд)
+            Cookies.set('user', JSON.stringify(user), { expires: 259200 / 86400 }); // 86400 секунд в дне
+            Cookies.set('isAuthenticated', 'true', { expires: 259200 / 86400 });
         },
         logout(state) {
             state.isAuthenticated = false;
             state.user = null;
 
-            localStorage.removeItem('user');
-            localStorage.removeItem('isAuthenticated');
+            Cookies.remove('user');
+            Cookies.remove('isAuthenticated');
         },
 
         initializeStore(state) {
-            const user = localStorage.getItem('user');
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            const userCookie = Cookies.get('user');
+            const isAuthenticatedCookie = Cookies.get('isAuthenticated');
 
-            if (user) {
-                state.user = JSON.parse(user);
-                state.isAuthenticated = isAuthenticated === 'true';
+            if (userCookie) {
+                state.user = JSON.parse(userCookie);
+                state.isAuthenticated = isAuthenticatedCookie === 'true';
             }
         },
         updateAvatar(state, newAvatarPath) {
             if (state.user && state.user.user_info) {
                 state.user.user_info.avatar = newAvatarPath;
-                localStorage.setItem('user', JSON.stringify(state.user));
+                // Обновляем куки с тем же сроком жизни
+                Cookies.set('user', JSON.stringify(state.user), { expires: 259200 / 86400 });
             }
         },
     },
@@ -43,6 +46,5 @@ const authStore = {
         user: (state) => state.user,
     },
 };
-
 
 export default authStore;

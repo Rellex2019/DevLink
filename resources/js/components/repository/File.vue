@@ -1,15 +1,17 @@
 <template>
     <transition name="swipe">
-        <button v-if="isVisible" @click="choiceFile" :class="{ active: isActive }" class="active-block" ref="activeBlock">
+        <button v-if="isVisible" @click="choiceFile" :class="{ active: isActive }" class="active-block"
+            ref="activeBlock">
             <div class="container-active-task">
                 <!-- Здесь активные задачи -->
                 <div class="active-task">
 
                     <div class="task-text">
-                        <img v-if="props.file.type=='file'" class="file-svg" :src="fileSvg" alt="SVG файла">
-                        <div class="name">{{ fileName }}<span :style="{ color: '#EDB200' }">{{ fileExtension }}</span></div>
+                        <img v-if="props.file.type == 'file'" class="file-svg" :src="fileSvg" alt="SVG файла">
+                        <div class="name">{{ fileName }}<span :style="{ color: '#EDB200' }">{{ fileExtension }}</span>
+                        </div>
                     </div>
-                    <div @click.stop="closeFile" class="container-close">
+                    <div @click.stop="closeFile()" class="container-close">
                         <svg width="13" class="close-svg" height="13" viewBox="0 0 13 13" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 1L6.5 6.5M12 12L6.5 6.5M6.5 6.5L1 12M6.5 6.5L12 1" class="close-svg"
@@ -28,11 +30,11 @@
 import { onMounted, ref, watch } from 'vue';
 import fileSvg from '@/svg/file.svg';
 const props = defineProps({
-    file:{
+    file: {
         type: Object,
         required: true
     },
-    fileTree:{
+    fileTree: {
         type: Array,
         required: true
     },
@@ -53,12 +55,20 @@ watch(() => props.updatedContent, (newContent) => {
     updatedScript.value = newContent;
 });
 watch(() => props.fileTree, (newContent) => {
-    checkExists(fileTree.value ,newContent);
+    checkExists(fileTree.value, newContent);
     fileTree.value = newContent;
+    newContent.map(file => {
+        if (file.id == fileData.value.id) {
+            fileData.value = file;
+        }
+    })
 });
 watch(() => props.file, (newContent) => {
     fileData.value = newContent;
 });
+watch(()=> fileData.value, (newData)=>{
+    splitTitle();
+})
 
 const emit = defineEmits(); // Определяем emit
 function choiceFile() {
@@ -74,28 +84,27 @@ function choiceFile() {
 }
 function closeFile(usedId) {
     isVisible.value = false;
-    const id = usedId? usedId : fileData.value.id;
-    setTimeout(()=>{
-        emit('read-content', '',null);
+    const id = usedId ? usedId : fileData.value.id;
+    setTimeout(() => {
+        emit('read-content', '', null);
         emit('close-file', id);
     }, 400)
 
 }
 
 
-function extractIds(fileTree)
-{
+function extractIds(fileTree) {
     const ids = [];
     fileTree.forEach(file => {
         ids.push(file.id);
-        if(file.children && file.children.length > 0) {
+        if (file.children && file.children.length > 0) {
             ids.push(...extractIds(file.children));
         }
     });
     return ids;
 }
 
-function checkExists(oldFileTree, newFileTree){
+function checkExists(oldFileTree, newFileTree) {
 
     const oldIds = extractIds(oldFileTree);
     const newIds = extractIds(newFileTree);
@@ -104,7 +113,7 @@ function checkExists(oldFileTree, newFileTree){
 
     deletedFiles.forEach(deletedId => {
         if (deletedId === fileData.value.id) {
-            closeFile(fileData.value.id); 
+            closeFile(fileData.value.id);
         }
     });
 }
@@ -132,9 +141,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.name{
+.name {
     white-space: nowrap;
 }
+
 .file-svg {
     height: 14px;
     width: 13px;

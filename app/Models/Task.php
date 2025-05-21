@@ -10,6 +10,7 @@ class Task extends Model
         'project_id',
         'title',
         'description',
+        'team_id',
         'status',
         'created_by',
         'assigned_to',

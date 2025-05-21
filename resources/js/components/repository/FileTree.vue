@@ -1,7 +1,10 @@
 <template>
     <div class="file-tree">
         <div v-for="(item, index) in fileTreeLocal">
-            <button class="item" @contextmenu.prevent.stop="showContextMenu($event, item)">
+            <button class="item" @contextmenu.prevent.stop="showContextMenu($event, item)" draggable="true"
+                @dragstart="handleDragStart($event, item)" @dragover="handleDragOver($event, item)"
+                @dragleave="handleDragLeave($event)" @drop="handleDrop($event, item)" @dragend="handleDragEnd($event)">
+
                 <div @click.stop="() => handleClick(item, index)" ref="containerName"
                     :class="{ 'usedElement': item.id == choicedFileLocal, 'choicedFolder': item.id == usedElementLocal }"
                     class="container-name">
@@ -15,7 +18,7 @@
                                 alt="Файл">
                             <input class="name input"
                                 v-if="item.type === 'addfile' || item.type === 'addfolder' || item.type === 'changefolder' || item.type === 'changefile'"
-                                v-focus v-model="inputContent" @keydown.enter="checkValidation(item)"
+                                v-focus v-model="inputContent" @keydown.enter.prevent="checkValidation(item)"
                                 @focus="inputContent = nameElementLocal" @blur="checkValidation(item)" type="text">
                         </div>
                         <span
@@ -37,7 +40,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { inject, ref } from 'vue';
 
 export default {
     name: 'FileTree',
@@ -49,6 +52,10 @@ export default {
             choicedFileLocal: ref(),
             usedElementLocal: null,
             fileTreeLocal: ref(),
+            isProcessing: false,
+
+            draggedItem: inject('draggedItem'),
+            dropTarget: inject('dropTarget')
         };
     },
     watch: {
@@ -126,8 +133,8 @@ export default {
             this.$emit('choice-element', id);
             this.usedElementLocal = id;
         },
-        removeFile(id = this.usedElementLocal) {
-            this.$emit('remove-file', id);
+        removeFile(id = this.usedElementLocal, empty) {
+            this.$emit('remove-file', id, empty);
 
         },
 
@@ -149,28 +156,120 @@ export default {
 
 
         checkValidation(item) {
+            if (this.isProcessing) return;
+            this.isProcessing = true;
+
             if (!this.inputContent || this.inputContent.length < 1) {
                 this.$showAlert('Длина файла не может быть меньше 1 символа', 'error');
                 if (item.type == 'addfile' || item.type == 'addfolder') {
-                    this.removeFile(item.id);
+                    this.removeFile(item.id, true);
                 }
-            }
-            else {
+            } else {
                 this.saveObject(item);
             }
 
+            setTimeout(() => { this.isProcessing = false; }, 1000);
         },
         saveObject(item) {
-            const type =
-                item.type == "addfile" || item.type == 'changefile' ? 'file' : 'folder'
+            const type = item.type == "addfile" || item.type == 'changefile' ? 'file' : 'folder';
 
             const newobject = {
                 "id": item.id,
                 "name": this.inputContent,
                 "type": type,
                 "parent_id": item.parent_id
+            };
+
+            // Передаем объект и тип операции (add/change) отдельными параметрами
+            this.$emit('store-object', {
+                data: newobject,
+                actionType: item.type.startsWith('add') ? 'add' : 'change'
+            });
+        },
+
+
+
+
+
+        handleDragStart(event, item) {
+            event.stopPropagation();
+
+            event.dataTransfer.setData('text/plain', JSON.stringify(item));
+            this.draggedItem = item;
+            event.currentTarget.style.opacity = '0.4';
+        },
+
+        handleDragOver(event, item) {
+            event.stopPropagation();
+            if (this.draggedItem &&
+                (item.type === 'folder' || item.type === 'addfolder' || item.type === 'changefolder') &&
+                item.id !== this.draggedItem.id) {
+                event.preventDefault();
+                this.dropTarget = item;
+                event.currentTarget.style.backgroundColor = '#656a6f63';
+                event.currentTarget.style.opacity = '1';
             }
-            this.$emit('store-object', newobject, item.type);
+        },
+
+        handleDragLeave(event) {
+            event.currentTarget.style.backgroundColor = '';
+        },
+
+        handleDrop(event, item) {
+            event.preventDefault();
+            event.currentTarget.style.backgroundColor = '';
+
+            if (this.draggedItem && this.dropTarget) {
+                // Проверяем, что не пытаемся переместить папку в саму себя или в свою дочернюю папку
+                if (this.isValidMove(this.draggedItem, this.dropTarget)) {
+                    this.moveItem(this.draggedItem, this.dropTarget);
+                } else {
+                    this.$showAlert('Невозможно переместить папку в саму себя или в дочернюю папку', 'error');
+                }
+            }
+
+            this.draggedItem = null;
+            this.dropTarget = null;
+        },
+        // В секции methods
+        handleDragEnd(event) {
+            event.currentTarget.style.opacity = '1'; // Сбрасываем opacity
+            this.draggedItem = null;
+            this.dropTarget = null;
+        },
+        isValidMove(sourceItem, targetItem) {
+            // Проверяем, что target не является дочерней папкой source
+            if (sourceItem.type === 'folder' && targetItem.type === 'folder') {
+                return !this.isChildFolder(sourceItem, targetItem);
+            }
+            // Для файлов проверяем только что не перемещаем в самого себя
+            return sourceItem.id !== targetItem.id;
+        },
+
+        isChildFolder(parent, child) {
+            // Рекурсивно проверяем, является ли child дочерней папкой parent
+            if (!child.children || !child.children.length) return false;
+            if (child.children.some(c => c.id === parent.id)) return true;
+            for (const c of child.children) {
+                if (this.isChildFolder(parent, c)) return true;
+            }
+            return false;
+        },
+
+        moveItem(item, targetFolder) {
+            // Создаем обновленный объект с новым parent_id
+            const updatedItem = {
+                ...item,
+                parent_id: targetFolder.id
+            };
+
+            // Эмитируем событие изменения
+            this.$emit('store-object', {
+                data: updatedItem,
+                actionType: 'move'
+            });
+
+            this.$showAlert(`"${item.name}" перемещен в "${targetFolder.name}"`, 'success');
         }
     }
 }
@@ -243,5 +342,20 @@ export default {
 .file-svg {
     width: 13px;
     height: 14px;
+}
+
+
+
+.item[draggable="true"] {
+    cursor: grab;
+}
+
+.item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.drop-target {
+    background-color: #656a6f63 !important;
+    border: 1px dashed #EDB200;
 }
 </style>

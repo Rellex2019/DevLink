@@ -8,55 +8,35 @@
                     <img class="arrow2" src="@/svg/arrow-folder.svg" alt="">
                 </div>
                 <div class="task-info">
-                    <div class="name">{{ task.title }} #{{ task.id }}</div>
+                    <input v-model="task.title" placeholder="Заголовок задания" class="input-title name">
                     <div class="add-info">
                         <div class="container-status">
+                            {{ status }}
                             <div class="circle-color" :style="{borderColor: status.color, backgroundColor: status.color+'50', borderStyle: 'solid', borderWidth: '1px'}">
                             </div>
                             <div class="status-name">{{ status.name }}</div>
                         </div>
                         <div class="container-status">
-                            <div class="repository-info">{{ $route.params.user }}/{{ $route.params.repositoryName }}</div>
+                            <div class="repository-info">{{ $route.params.user }}/{{ $route.params.repositoryName }}
+                            </div>
                         </div>
                     </div>
 
                 </div>
                 <div class="actions-task">
-                    <button @click="handleChange">{{ editMode ? 'Отмена' : 'Изменить' }}</button>
-                    <button class="delete-btn" @click="handleDelete(task.id)">Удалить</button>
+                    <button class="delete-btn" @click="handleDelete(task.id)">Отменить</button>
                 </div>
             </div>
             <div class="container-comments">
-                <div class="container-description">
-                    <div class="container-avatar">
-                        <img src="@/svg/default-avatar.svg" alt="">
-                    </div>
-                    <div class="container-text">
-                        <div class="container-info">
-                            <div class="user-name">Имя</div>
-                            <div class="date">позавчера</div>
-                        </div>
-                        <div class="text">
-                            {{ task.description }}
-                        </div>
-                    </div>
-                </div>
                 <div class="container-comment">
 
-                    <div @click="editMode = true" class="title">{{ editMode ? 'Внести изменения' : 'Добавить комментарий' }}
-                    </div>
                     <div class="container-text comment">
                         <div class="container-action">
-                            <input v-if="editMode" v-model="task.title" class="input-title">
-                            <div v-else style="font-size: 15px;">Написать</div>
+                            <div style="font-size: 15px;">Описание задачи</div>
                         </div>
-                        <textarea v-if="editMode" v-model="task.description" class="text"
-                            placeholder="Описание..."></textarea>
-                        <textarea v-else class="text"
-                            placeholder="Здесь вы можете дополнить задание комментарием"></textarea>
+                        <textarea v-model="task.description" class="text" placeholder="Описание..."></textarea>
                     </div>
-                    <button v-if="editMode" @click="handleSave" class="sent-btn" type="submit">Сохранить</button>
-                    <button v-else class="sent-btn" type="submit">Отправить</button>
+                    <button @click="handleSave" class="sent-btn" type="submit">Сохранить</button>
                 </div>
             </div>
         </div>
@@ -64,49 +44,41 @@
 </template>
 <script>
 export default {
-    name: 'TaskModal',
+    name: 'TaskCreateModal',
     inject: ['deleteTask'],
     data() {
         return {
-            task: {...this.taskInfo},
-            editMode: this.edit ?? false
+            task: { ...this.taskInfo },
         }
     },
     props: {
         taskInfo: {
             required: true
         },
-        edit: {
-            required: false,
-            type: Boolean
-        },
-        status:{
+        status: {
             required: false
         }
     },
     methods: {
         closeModal() {
-            this.$emit('close-modal');
-            if (this.editMode) {
-                this.task = {...this.taskInfo};
+            if (this.task.title.length > 0) {
+                this.handleSave();
+                this.$emit('close-modal');
             }
+            else{
+                this.task = { ...this.taskInfo };
+                this.handleDelete(this.task.id)
+            }
+
+
+
         },
         handleDelete(taskId) {
-            this.deleteTask(taskId, true);
+            this.deleteTask(taskId, false);
         },
-        handleChange() {
-            console.log(this.editMode);
-            this.editMode = !this.editMode;
-            if (this.editMode) {
-                this.task = {...this.taskInfo};
-            }
-
-
-        },
-        handleSave()
-        {
-            this.$emit('save-task', this.task, this.editMode?'edit': 'create');
-            this.editMode = false;
+        handleSave() {
+            this.$emit('save-task', this.task);
+            this.$emit('close-modal');
         }
 
     }
@@ -140,7 +112,6 @@ export default {
     position: relative;
     display: flex;
     justify-content: space-between;
-    border-bottom: 1px solid #7B7B7B;
     padding-bottom: 15px;
 }
 
@@ -151,7 +122,7 @@ export default {
 }
 
 .name {
-    font-size: 24px;
+    font-size: 20px;
     max-width: 650px;
     word-break: break-all;
 }
@@ -361,11 +332,16 @@ export default {
 }
 
 .input-title {
-    font-size: 15px;
+    border: 1px solid #343A40;
+    border-radius: 10px;
+    padding: 5px 15px;
     flex: 1;
     background: none;
-    border: none;
     outline: none;
     color: #FFF;
+}
+
+.input-title:hover {
+    border-color: #EDB200;
 }
 </style>

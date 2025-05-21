@@ -10,19 +10,21 @@
                         <div class="container-textarea">
                             <div class="name-input">Названия организации *</div>
                             <div class="container-path">
-                                <input type="text" class="input" name="name" required id="">
+                                <input type="text" class="input" name="name" v-model="formDataCreate.name" required
+                                    id="">
                             </div>
                         </div>
                         <div class="container-textarea">
                             <div class="name-input">Контактный адрес электронной почты *</div>
                             <div class="container-path">
-                                <input type="email" class="input" name="email" required id="">
+                                <input type="email" class="input" name="email" v-model="formDataCreate.email" required
+                                    id="">
                             </div>
                         </div>
                         <div class="container-checkbox">
                             <div class="custom-checkbox">
-                                <input type="checkbox" v-model="isChecked" required
-                                    @change="$emit('change', isChecked)" class="custom-checkbox__input">
+                                <input type="checkbox" v-model="isChecked" required @change="$emit('change', isChecked)"
+                                    class="custom-checkbox__input">
                                 <span class="custom-checkbox__checkmark" @click="isChecked = !isChecked"></span>
                                 <span class="custom-checkbox__label"> Я являюсь человеком и принимаю 
                                     <a href="#" style="color: inherit;">
@@ -37,7 +39,7 @@
 
                 <transition name="fade-slide" mode="out-in">
                     <div v-if="currentStep === 2" key="step2" class="container-form">
-                        <div class="name-block">Добро пожаловать в <br>{название организации}</div>
+                        <div class="name-block">Добро пожаловать <br>в {{ teamInfo.name }}</div>
                         <div class="container-textarea2">
                             <div class="name-input">Выберите аватар (необязательно)</div>
                             <div class="container-path2 " @click="triggerFileInput">
@@ -59,7 +61,7 @@
                                 <input type="search" class="input" name="email" id="">
                             </div>
                         </div>
-                        <button class="btn-back"  @click="$router.push('/')">Вернуться на главную</button>
+                        <button class="btn-back" @click="completeTeamCreate">Завершить настройку</button>
                     </div>
                 </transition>
 
@@ -73,6 +75,7 @@
 <script>
 import { mapGetters } from 'vuex/dist/vuex.cjs.js';
 import Footer from '../components/Footer.vue';
+import axios from 'axios';
 
 export default {
     name: 'TeamCreateView',
@@ -85,21 +88,40 @@ export default {
             avatarFile: null,
             avatarPreview: null,
             isChecked: false,
-            formData: {
+            formDataCreate: {
                 name: '',
                 email: '',
-                address: '',
-                city: ''
-            }
+            },
+            teamInfo: null,
         }
     },
     computed: {
         ...mapGetters('authStore', ['user']),
     },
     methods: {
-        submitForm() {
-            console.log('Форма отправлена:', this.formData);
-            this.currentStep++;
+        async submitForm() {
+            console.log('Форма отправлена:', this.formDataCreate);
+            await axios.post('/team/create', this.formDataCreate)
+                .then(response => {
+                    this.teamInfo = response.data;
+                    this.currentStep++;
+                })
+
+        },
+        async completeTeamCreate() {
+            const formData = new FormData();
+            formData.append('logo', this.avatarFile || '')
+            await axios.post(`/team/${this.teamInfo.id}/change`, formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            )
+                .then(response => {
+                    // $router.push('/')
+                })
+
         },
         triggerFileInput() {
             this.$refs.fileInput.click()
@@ -157,7 +179,7 @@ export default {
 }
 
 .name-block {
-    text-align: center;
+
     font-size: 32px;
     font-weight: 500;
     white-space: nowrap;
@@ -365,21 +387,25 @@ export default {
     height: 100%;
     object-fit: cover;
 }
+
 .avatar-placeholder {
-  font-size: 32px;
-  color: #999;
+    font-size: 32px;
+    color: #999;
 }
+
 .container-path2 {
     display: flex;
     gap: 25px;
 }
+
 .container-textarea2 {
     display: flex;
     flex-direction: column;
     gap: 20px;
     font-size: 22px;
 }
-.btn-back{
+
+.btn-back {
     cursor: pointer;
     border: none;
     color: #edb200ce;

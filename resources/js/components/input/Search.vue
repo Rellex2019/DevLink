@@ -57,6 +57,7 @@ export default {
             }
         },
         handleChange() {
+            this.$emit('write-input', this.inputContent);
             if (this.inputContent.length != 0) {
                 this.empty = false;
             }

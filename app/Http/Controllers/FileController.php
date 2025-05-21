@@ -50,16 +50,32 @@ class FileController extends Controller
 
         return response()->json($file, 201);
     }
-
-    public function updateContent(int $fileId, Request $request)
+    public function updateObject(Request $request, int $projectId, int $fileId)
     {
-        $request->validate(['content' => 'required|string']);
+        $request->validate(['name' => 'required|string']);
+        
+        $file = $this->fileService->updateFile($fileId, $request->all());
+        return response()->json($file);
+    }
+    public function updateContent(int $projectId, int $fileId, Request $request)
+    {
+        $request->validate(['content' => 'nullable|string']);
 
         $file = $this->fileService->updateFileContent($fileId, $request->content);
 
         return response()->json($file);
     }
-    public function destroy(int $fileId): JsonResponse
+    public function moveObject(int $projectId, int $objectId, Request $request)
+    {
+        $request->validate(['parent_id' => 'required|int']);
+
+        $file = $this->fileService->moveFile($objectId, $request->parent_id);
+
+        return response()->json($file);
+    }
+    
+
+    public function destroy(int $projectId, int $fileId): JsonResponse
     {
         $this->fileService->deleteFile($fileId);
         return response()->json(null, 204);

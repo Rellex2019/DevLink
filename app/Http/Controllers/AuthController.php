@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,51 +15,77 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:8', 
         ]);
 
-        if ($validator->fails()) {
+        DB::beginTransaction();
+
+        try {
+            $user = User::create([
+                'name' => $validatedData['name'],
+                'email' => $validatedData['email'],
+                'password' => Hash::make($validatedData['password']),
+            ]);
+
+
+
+            // Можно добавить отправку email для верификации
+            // $user->sendEmailVerificationNotification();
+            Auth::login($user);
+
+            DB::commit();
+
             return response()->json([
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Регистрация прошла успешно',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar' => $user->profile->avatar,
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Registration error: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Произошла ошибка при регистрации',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        Auth::login($user);
-
-        return response()->json([
-            'message' => 'Регистрация прошла успешно',
-            'user' => $user
-        ], 201);
     }
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $validated = $request->validate([
             'email' => 'required|email',
-            'password' => 'required',
+            'password' => 'required|string',
         ]);
 
-        if (Auth::attempt($credentials, $request->remember)) {
+        if (Auth::attempt($validated, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
             $user = Auth::user();
+            $user->load('profile');
+
             return response()->json([
                 'message' => 'Вы успешно вошли',
-                'user'=> $user
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar' => $user->profile->avatar ?? null,
+                ]
             ]);
         }
 
         return response()->json([
-            'message' => 'Неверные учетные данные',
-        ], 403);
+            'message' => 'Предоставленные учетные данные неверны.',
+        ], 401);
     }
 
     public function logout(Request $request)

@@ -6,13 +6,14 @@
 
             <div class="container-files-block">
                 <div class="outer-padding-inblock">
-                    <div class="files-block">
+                    <div class="files-block" ref="filesBlock" @dragover.prevent="handleDragOver"
+                        @dragleave.prevent="handleDragLeave" @drop="handleDrop">
                         <Search class="search-input" placeholderText="Поиск среди файлов..." />
                         <!-- Сделать фото из БД -->
                         <div class="container-person-repository">
                             <div class="container-person-photo"><img class="person-photo" src="@/images/Avatar.png"
                                     alt="Фото пользователя"></div>
-                            <div class="person-name">Rellex/</div>
+                            <div class="person-name">{{ route.params.user }}/</div>
                         </div>
                         <div class="repository-action">
                             <div class="repository-name" :class="{ 'selected': choicedFolder == null }"
@@ -43,16 +44,22 @@
 
                 <div class="container-inner-file">
                     <div class="inner-file">
-                        <Content @update-content="contentFileUpdate" :content="contentFile" :id="selectedFile" />
+                        <Content @update-content="contentFileUpdate" :id="selectedFile" :content="contentFile"
+                            :language="fileExtension" />
                     </div>
                 </div>
             </div>
 
 
-            <div class="container-team-block">
+
+
+            <div class="container-team-block" :class="{ 'visible': showTeamBlock }">
+                <div class="toggle-team-block-btn" @click="showTeamBlock = !showTeamBlock">
+                    {{ showTeamBlock ? '►' : '◄' }}
+                </div>
                 <div class="outer-padding-inblock">
                     <div class="team-block">
-                        FILA
+                        <button @click="$router.push(`${$route.path}/team1/tasks`)" style="color: black;">Перейти к задачам ПРОЕКТА</button>
                     </div>
                 </div>
             </div>
@@ -73,7 +80,7 @@ import Search from '@/js/components/input/Search.vue';
 import File from '@/js/components/repository/File.vue';
 import Content from '@/js/components/repository/Content.vue';
 import FileTree from '@/js/components/repository/FileTree.vue';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, provide, ref, useTemplateRef } from 'vue';
 import Modal from '@/js/components/modal/Modal.vue';
 import axios from 'axios';
 import { useRoute } from 'vue-router';
@@ -95,18 +102,33 @@ const fileTree = ref([]);
 const nameElement = ref('');
 
 
+const showTeamBlock = ref(false);
 const containerOptions = ref(null);
 let showMenu = ref(false);
 let mouseX = ref(0);
 let mouseY = ref(0);
 
-const route = useRoute()
+const route = useRoute();
+
+const draggedItem = ref(null);
+const dropTarget = ref(null);
 
 
-//Добавление, удаление папок и файлов
-// КОГДА БУДЕТ БД ОБЯЗАТЕЛЬНО НАДО СДЕЛАТЬ ТАК ЧТОБЫ
-// id строка была убрана, а после добавления данных в бд saveObject
-// запросить новые данные из бд 
+provide('draggedItem', draggedItem);
+provide('dropTarget', dropTarget);
+
+const fileExtension = computed(() => {
+    if (!selectedFile.value) return '';
+
+    const currentFile = files.value.find(file => file.id === selectedFile.value);
+    if (!currentFile || !currentFile.name) return '';
+
+    const parts = currentFile.name.split('.');
+    return parts.length > 1 ? parts.pop().toLowerCase() : '';
+});
+
+
+
 function fetchFiles() {
     axios.get(`/files/${route.params.user}/${route.params.repositoryName}`)
         .then(response => {
@@ -151,26 +173,97 @@ function addObjectArea(type) {
     }
 
 }
-function saveObject(newObject, type) {
-    console.log(type);
-    console.log(newObject);
-    files.value = files.value.map(file => {
-        if (file.id === newObject.id) {
-            return {
-                ...file,
-                ...newObject
-            };
-        }
-        return file;
-    });
-    fileTree.value = buildFileTree(files.value, null, true);
+function saveObject({ data, actionType }) {
+    console.log('Action type:', actionType); // 'add' или 'change'
+    console.log('Object data:', data);
+
+    if (actionType === 'add') {
+        axios.post(data.type == 'file' ?
+            `/project/${projectId.value}/file/create` :
+            `/project/${projectId.value}/folder/create`,
+            { ...data, 'project_id': projectId.value, content: '' })
+            .then(response => {
+                files.value = files.value.map(file => {
+                    if (file.id === data.id) {
+                        return {
+                            ...response.data,
+                        };
+                    }
+                    return file;
+                });
+                response.data.type == 'file' ? openFile(response.data.id) : changeChoicedFolder(response.data.id);
+
+                fileTree.value = buildFileTree(files.value, null, true);
+            })
+            .catch(error => {
+                console.error('Ошибка сохранения:', error);
+                // Откатываем изменения в случае ошибки
+                files.value = files.value.filter(file => file.id !== data.id);
+                fileTree.value = buildFileTree(files.value);
+            });
+    }
+    // Обработка изменения существующего элемента
+    else if (actionType === 'change') {
+
+        axios.put(`/project/${projectId.value}/object/update/${data.id}`, data)
+            .then(response => {
+                files.value = files.value.map(file => {
+                    if (file.id === data.id) {
+                        return {
+                            ...file,
+                            ...data,
+                            type: data.type // меняем тип с 'changefile'/'changefolder' на 'file'/'folder'
+                        };
+                    }
+                    return file;
+                });
+
+                fileTree.value = buildFileTree(files.value, null, true);
+            })
+            .catch(error => {
+                fileTree.value = buildFileTree(files.value);
+            });
+    }
+    else if(actionType === 'move')
+    {
+        axios.put(`/project/${projectId.value}/object/move/${data.id}`, data)
+            .then(response => {
+                files.value = files.value.map(file => {
+                    if (file.id === data.id) {
+                        return {
+                            ...file,
+                            ...data,
+                            type: data.type // меняем тип с 'changefile'/'changefolder' на 'file'/'folder'
+                        };
+                    }
+                    return file;
+                });
+
+                fileTree.value = buildFileTree(files.value, null, true);
+            })
+            .catch(error => {
+                fileTree.value = buildFileTree(files.value);
+            });
+    }
 }
 
 //Удаление
-function removeFile(usedId) {
+async function removeFile(usedId, empty) {
     const id = usedId ? usedId : usedElement.value;
-    files.value = files.value.filter(file => file.id != id);
-    fileTree.value = buildFileTree(files.value);
+
+    if (empty) {
+        removeInputs();
+        fileTree.value = buildFileTree(files.value, null, false);
+        console.log(empty);
+    }
+    else {
+        await axios.delete(`/project/${projectId.value}/delete/${id}`)
+            .then(response => {
+                files.value = files.value.filter(file => file.id != id);
+                fileTree.value = buildFileTree(files.value);
+            })
+    }
+
     showMenu.value = false;
 }
 
@@ -199,21 +292,9 @@ function openInputName() {
 }
 
 function removeInputs() {
-    files.value = files.value.map(file => {
-        if (file.type === 'changefolder')
-            return {
-                ...file,
-                'type': 'folder'
-
-            }
-        else if (file.type === 'changefile')
-            return {
-                ...file,
-                'type': 'file'
-            }
-        return file;
-    });
-
+    files.value = files.value.filter(file =>
+        !['changefolder', 'changefile', 'addfile', 'addfolder'].includes(file.type)
+    );
 }
 //
 
@@ -271,8 +352,12 @@ function contentFileShow(content, id) {
     contentFile.value = content;
     selectedFile.value = id;
 }
-function contentFileUpdate(content, id) {
-    updatedContent.value[id] = content;
+async function contentFileUpdate(content, id) {
+
+    await axios.put(`/project/${projectId.value}/file/update/${id}`, { 'content': content })
+        .then(response => {
+            updatedContent.value[id] = content;
+        })
 }
 //............................................
 
@@ -284,18 +369,18 @@ function changeUsedElement(id) {
     usedElement.value = id;
 }
 function openFile(id) {
+
+
     const findToAdd = files.value.find(file => file.id === id);
     if (findToAdd) {
         const exists = inActiveBar.value.find(file => file.id === id);
         if (exists) {
             selectFile(id);
-            selectedFile.value = id;
             contentFile.value = updatedContent.value[id] ? updatedContent.value[id] : findToAdd.content;
         }
         else {
             inActiveBar.value.push(findToAdd);
             selectFile(id);
-            selectedFile.value = id;
             contentFile.value = updatedContent.value[id] ? updatedContent.value[id] : findToAdd.content;
 
         }
@@ -306,7 +391,8 @@ function openFile(id) {
     }
 }
 function closeFile(id) {
-    inActiveBar.value = inActiveBar.value.filter(file => file.id !== id);
+    console.log(id);
+    inActiveBar.value = inActiveBar.value.filter(file => file.id != id);
 }
 
 function selectFile(id) {
@@ -341,6 +427,39 @@ function handleClickOut(event) {
 
 
 
+const filesBlock = ref(null);
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.style.backgroundColor = '#656a6f63'; 
+}
+
+function handleDragLeave(event) {
+    event.currentTarget.style.backgroundColor = '';
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    filesBlock.value.style.backgroundColor = '';
+    if (draggedItem.value) {
+        if (event.currentTarget === filesBlock.value) {
+            const updatedItem = {
+                ...draggedItem.value,
+                parent_id: null
+            };
+            saveObject({
+                data: updatedItem,
+                actionType: 'change'
+            });
+        }
+
+        draggedItem.value = null; 
+        dropTarget.value = null; 
+    }
+}
+
+
+
+
 onMounted(() => {
     fetchFiles();
 
@@ -367,9 +486,11 @@ onMounted(() => {
 .repository-block {
     width: 100%;
     display: flex;
+    background-color: #101112;
 }
 
 .container-files-block {
+    flex: none;
     width: 23.5%;
     background-color: #161718;
     box-sizing: border-box;
@@ -502,6 +623,9 @@ onMounted(() => {
 
 
 .container-active-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     border-bottom: 1px solid #656A6F;
     border-right: 1px solid #656A6F;
@@ -589,6 +713,7 @@ onMounted(() => {
 
 
 .container-inner-file {
+    flex: 1;
     height: calc(100% - 58px);
     border-top: 1px solid #656A6F;
     width: 100%;
@@ -604,7 +729,8 @@ onMounted(() => {
 
 
 
-.container-team-block {
+.container-team-block.visible {
+    position: relative;
     width: 27%;
     box-sizing: border-box;
     background-color: #101112;
@@ -612,5 +738,46 @@ onMounted(() => {
 
 .team-block {
     height: calc(100vh - 80px);
+}
+
+
+.toggle-team-block-btn {
+    position: absolute;
+    right: 0;
+    /* Ширина team-block */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    cursor: pointer;
+    background-color: #161718;
+    padding: 10px 5px;
+    border-radius: 5px 0 0 5px;
+    border: 1px solid #656A6F;
+    border-right: none;
+}
+
+.toggle-team-block-btn:hover {
+    background-color: #656A6F;
+}
+
+.container-team-block {
+    width: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+}
+
+.container-team-block.visible {
+    right: 0;
+    /* Показываем */
+}
+
+.repository-block {
+    width: 100%;
+    display: flex;
+    position: relative;
+    /* Добавьте это */
+    overflow: hidden;
+    /* Чтобы скрывать team-block за пределами */
 }
 </style>

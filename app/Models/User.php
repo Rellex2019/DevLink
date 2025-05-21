@@ -49,12 +49,16 @@ class User extends Authenticatable
     protected static function booted()
     {
         static::created(function ($user) {
-            // Создаем профиль при регистрации пользователя
-            $user->profile()->create();
+            $user->profile()->create([
+                'avatar' => 'avatars/default-avatar.svg' 
+            ]);
         });
     }
 
-
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'owner_name', 'name');
+    }
     public function profile()
     {
         return $this->hasOne(UserProfile::class);

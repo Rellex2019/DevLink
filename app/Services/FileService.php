@@ -12,7 +12,6 @@ class FileService
     public function getProjectFiles(int $projectId, ?int $parentId = null)
     {
         return File::where('project_id', $projectId)
-            ->where('parent_id', $parentId)
             ->orderBy('type', 'desc') // Папки сначала
             ->orderBy('name')
             ->get();
@@ -28,7 +27,7 @@ class FileService
             'content' => null
         ]);
 
-        event(new FileCreated($folder));
+        // event(new FileCreated($folder));
 
         return $folder;
     }
@@ -42,8 +41,7 @@ class FileService
             'content' => $data['content'] ?? '',
             'parent_id' => $data['parent_id'] ?? null
         ]);
-
-        event(new FileCreated($file));
+        // event(new FileCreated($file));
 
         return $file;
     }
@@ -57,17 +55,17 @@ class FileService
             'content' => $data['content'] ?? $file->content
         ]);
 
-        event(new FileUpdated($file));
+        // event(new FileUpdated($file));
 
         return $file;
     }
 
-    public function updateFileContent(int $fileId, string $content): File
+    public function updateFileContent(int $fileId, $content): File
     {
         $file = File::findOrFail($fileId);
 
         $file->update(['content' => $content]);
-        event(new FileUpdated($file));
+        // event(new FileUpdated($file));
 
         return $file;
     }
@@ -77,11 +75,11 @@ class FileService
         $file = File::findOrFail($fileId);
         
         if ($file->type === 'folder') {
-            $this->deleteFolderContents($file->project_id, $file->id);
+            $this->deleteFolderContents( $file->id);
         }
     
         $file->delete();
-        event(new FileDeleted($file));
+        // event(new FileDeleted($file));
     }
 
     protected function deleteFolderContents(int $folderId): void
@@ -99,7 +97,7 @@ class FileService
         $file = File::findOrFail($fileId);
 
         $file->update(['parent_id' => $newParentId]);
-        event(new FileUpdated($file));
+        // event(new FileUpdated($file));
 
         return $file;
     }

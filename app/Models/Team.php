@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Team extends Model
 {
     protected $fillable = [
-        'name'
+        'owner',
+        'name',
+        'email',
+        'logo',
     ];
     public function users()
     {
@@ -17,5 +20,15 @@ class Team extends Model
     public function projects()
     {
         return $this->belongsToMany(Project::class);
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    public function statuses()
+    {
+        return $this->hasMany(TaskStatus::class);
     }
 }

@@ -26,7 +26,7 @@
 
 <script>
 export default {
-  name: 'Elipsis',
+  name: 'ElipsisPrevent',
   props: {
     id: {
       required: true
@@ -38,7 +38,6 @@ export default {
     }
   },
   emits: ['delete', 'edit'],
-  inject: ['deleteTask'],
   data() {
     return {
       enableModal: false,
@@ -71,7 +70,7 @@ export default {
       this.enableModal = false;
     },
     handleDelete() {
-      this.deleteTask(this.id, true)
+      this.$emit('delete',this.id)
       this.closeModal();
     },
     handleEdit() {

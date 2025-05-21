@@ -28,7 +28,7 @@
                 <form @submit.prevent="handleSubmit" class="form">
                     <div class="form-group">
                         <label>Email *</label>
-                        <input type="email" v-model="form.email" placeholder="Email" required>
+                        <input type="email" v-model="form.email"  required>
 
                         <!-- ВЫВОД ОШИБКИ -->
 
@@ -37,13 +37,13 @@
 
                     <div class="form-group">
                         <label>Пароль *</label>
-                        <input type="password" v-model="form.password" placeholder="Пароль" required minlength="8">
+                        <input type="password" v-model="form.password" required minlength="8">
                         <span class="hint">Пароль должен содержать 8 символов включая числа и буквы.</span>
                     </div>
 
                     <div class="form-group">
                         <label>Ник пользователя *</label>
-                        <input type="text" v-model="form.name" @input="checkNick" placeholder="Ник" required>
+                        <input type="text" v-model="form.name" @input="checkNick"  required>
                         <span class="hint" v-if="!usernameError">Ник может содержать числа и буквы или одиночные дефисы.</span>
                         <div class="error" v-if="usernameError"><img class="alert" src="@/svg/alert.svg" /> {{ usernameError }}</div>
                     </div>
@@ -222,8 +222,9 @@ export default {
 
 .form-group input {
     width: 100%;
+    box-sizing: border-box;
     font-size: 1.04vw;
-    padding: 1.04vw 0.62vw;
+    padding: 0.6vw 0.62vw;
     border: 1px solid #d1d5da;
     border-radius: 0.26vw;
 }

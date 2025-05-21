@@ -7,28 +7,31 @@
             <div class="container-action">
 
                 <div style="display: flex; gap: 7px; position: relative; align-items: center; width: fit-content;;">
-                    <div class="status-color" style=" background-color: #00823025; border: 1px solid #008230;"></div>
+                    <div class="status-color"
+                        :style="{ backgroundColor: `${color}50`, borderColor: `${color}`, borderWidth: '1px', borderStyle: 'solid' }">
+                    </div>
                     <div class="status-name">{{ status }}</div>
-                    <div class="task-count">0</div>
+                    <div class="task-count">{{ tasks.length }}</div>
                 </div>
 
 
-                <Elipsis />
+                <ElipsisPrevent :id="statusId" @delete="deleteStatus" @edit="editStatus" />
 
             </div>
             <div class="ps">Задачи которые надо выполнить</div>
         </div>
-
         <div class="container-tasks" ref="scrollContainer" :style="{ paddingRight: hasScroll ? '7px' : '0' }">
             <Task v-for="task in tasks" :task="task" />
         </div>
 
 
-        <button class="add-task-btn"><span>+</span> Добавить задачу</button>
+        <button class="add-task-btn" @click="addTask"><span>+</span> Добавить задачу</button>
     </div>
+
 </template>
 <script>
-import Elipsis from '../modal/Elipsis.vue';
+import ElipsisPrevent from '../modal/ElipsisPrevent.vue';
+
 import Task from './Task.vue';
 
 export default {
@@ -40,12 +43,23 @@ export default {
         status: {
             type: String,
             required: true
-        }
+        },
+        statusId: {
+            type: Number,
+            required: true
+        },
+        color: {
+            type: String,
+            required: true
+        },
     },
+
     components: {
-        Elipsis,
+        ElipsisPrevent,
         Task
     },
+    inject:['deleteStatus', 'editStatus'],
+    emits: ['task-dropped', 'task-add'],
     data() {
         return {
             observer: null,
@@ -61,8 +75,8 @@ export default {
         });
 
         this.observer.observe(this.$refs.scrollContainer, {
-            childList: true, 
-            subtree: true 
+            childList: true,
+            subtree: true
         });
     },
     beforeDestroy() {
@@ -72,6 +86,10 @@ export default {
         }
     },
     methods: {
+        addTask()
+        {
+            this.$emit('task-add', this.statusId)
+        },
         checkScroll() {
             const container = this.$refs.scrollContainer;
             this.hasScroll = container.scrollHeight > container.clientHeight;
@@ -93,7 +111,7 @@ export default {
             const taskId = e.dataTransfer.getData('text/plain');
             this.$emit('task-dropped', {
                 taskId: parseInt(taskId),
-                newStatus: this.status
+                newStatus: this.statusId
             });
         }
     }
@@ -102,6 +120,7 @@ export default {
 </script>
 <style scoped>
 .container-status {
+    flex: none;
     width: clamp(200px, 20vw, 560px);
     padding: 18px 18px;
     padding-bottom: 50px;
@@ -159,7 +178,7 @@ export default {
     gap: 10px;
     overflow-y: auto;
     box-sizing: border-box;
-    min-height: 50px;
+    min-height: 450px;
     max-height: 450px;
 }
 
@@ -211,4 +230,6 @@ export default {
 .add-task-btn:active {
     background-color: #0f1011;
 }
+
+
 </style>

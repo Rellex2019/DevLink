@@ -8,7 +8,7 @@ import Login from './pages/Login.vue';
 import RepositoryCreate from './pages/RepositoryCreate.vue';
 import TeamCreateView from './pages/TeamCreateView.vue';
 import Profile from './pages/ProfileView.vue';
-import TaskCreateView from './pages/TaskCreateView.vue';
+import TasksView from './pages/TasksView.vue';
 
 const isAuthenticated = (to, from, next) => {
     const authenticated = store.getters['authStore/isAuthenticated'];
@@ -32,6 +32,16 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
+            path: '/registration',
+            name: 'registration',
+            component: Registration
+        },
+        {
+            path: '/login',
+            name: 'login',
+            component: Login
+        },
+        {
             path: '/', 
             name: 'welcome',
             component: Welcome
@@ -40,18 +50,6 @@ const router = createRouter({
             path: '/dashboard', 
             name: 'dashboard',
             component: Dashboard,
-            beforeEnter: isAuthenticated
-        },
-        {
-            path: '/:user/info', 
-            name: 'profile',
-            component: Profile,
-            beforeEnter: isAuthenticated
-        },
-        {
-            path: '/:user/:repositoryName',
-            name: 'repository',
-            component: Repository,
             beforeEnter: isAuthenticated
         },
         {
@@ -67,21 +65,26 @@ const router = createRouter({
             beforeEnter: isAuthenticated
         },
         {
-            path: '/task/create',
-            name: 'createTask',
-            component: TaskCreateView,
+            path: '/:user', 
+            name: 'profile',
+            component: Profile,
             beforeEnter: isAuthenticated
         },
         {
-            path: '/registration',
-            name: 'registration',
-            component: Registration
+            path: '/:user/:repositoryName/:team/tasks',
+            name: 'createTask',
+            component: TasksView,
+            beforeEnter: isAuthenticated
         },
         {
-            path: '/login',
-            name: 'login',
-            component: Login
+            path: '/:user/:repositoryName',
+            name: 'repository',
+            component: Repository,
+            beforeEnter: isAuthenticated
         },
+
+
+
     ]
 });
 

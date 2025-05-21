@@ -15,7 +15,10 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->foreignId('owner')->constrained('users')->cascadeOnDelete();
+            $table->string('name')->unique();
+            $table->string('email')->unique();
+            $table->string('logo')->nullable()->default('/storage/logos/default-logo.jpg');
             $table->timestamps();
         });
     }

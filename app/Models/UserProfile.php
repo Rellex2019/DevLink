@@ -14,11 +14,26 @@ class UserProfile extends Model
         'website',
         'location',
         'github',
-        'twitter',
+        'twitter', //Удалить
         'linkedin',
         'dark_mode',
         'theme_color',
         'total_projects',
         'completed_tasks'
     ];
+    protected $appends = ['name'];
+    public function getNameAttribute()
+    {
+        return $this->user->name;
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function links()
+    {
+        return $this->belongsToMany(Link::class);
+    }
 }

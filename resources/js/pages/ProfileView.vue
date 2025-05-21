@@ -3,28 +3,28 @@
         <div class="profile">
             <div v-if="!editMode" class="person-block">
                 <div class="img-container">
-                    <img v-if="profileInfo.image" :src="profileInfo.image" alt="avatar" class="img-avatar">
+                    <img v-if="profileInfo.avatar" :src="profileInfo.avatar" alt="avatar" class="img-avatar">
                     <img v-else src="@/svg/default-avatar.svg" alt="avatar" class="img-avatar">
                 </div>
                 <div class="person-name">{{ profileInfo.name }}</div>
-                <div class="person-description" v-html="profileInfo.bio"></div>
+                <div class="person-description" v-if="profileInfo.bio" v-html="profileInfo.bio"></div>
                 <button class="btn-edit-profile" @click="enableEdit">Редактировать профиль</button>
                 <div class="contacts">
                     <div class="location" v-if="profileInfo.location">
                         <div class="svg"><img src="@/svg/mark.svg" alt=""></div>
                         <div class="location-name">{{ profileInfo.location }}</div>
                     </div>
-                    <div class="socials" v-if="profileInfo.socials">
-                        <div class="social" v-for="social in profileInfo.socials">
+                    <div class="socials" v-if="profileInfo.links">
+                        <div class="social" v-for="social in profileInfo.links">
                             <div class="svg"><img src="@/svg/link.svg" alt=""></div>
                             <a :href="social.link">{{ social.name }}</a>
                         </div>
                     </div>
                 </div>
-                <div class="teams" v-if="profileInfo.teams">
+                <div class="teams" v-if="teams">
                     <div class="name-team-block">Команды</div>
                     <div class="container-team-img">
-                        <a :href="team.link" v-for="team in profileInfo.teams"><img :src="team.image" alt=""></a>
+                        <a @click="$router.push(`/team/${team.name}`)" v-for="team in teams"><img :src="team.logo" alt=""></a>
                     </div>
                 </div>
             </div>
@@ -33,7 +33,7 @@
             <div v-if="editMode" class="person-block">
                 <div class="img-container" @click="triggerFileInput">
                     <img v-if="avatarPreview" :src="avatarPreview" alt="Аватар команды" class="img-avatar">
-                    <img v-else-if="profileInfo.image" :src="profileInfo.image" alt="avatar"
+                    <img v-else-if="profileInfo.avatar" :src="profileInfo.avatar" alt="avatar"
                         class="img-avatar avatar-change">
                     <img v-else src="@/svg/default-avatar.svg" alt="avatar" class="img-avatar avatar-change">
                     <input style="display: none;" @change="handleFileUpload" ref="fileInput" type="file">
@@ -43,7 +43,7 @@
                 <textarea class="person-description" v-model="profileChange.bio"
                     placeholder="Расскажите о себе"></textarea>
                 <div class="contacts">
-                    <div class="location" v-if="profileChange.location">
+                    <div class="location">
                         <div class="svg"><img src="@/svg/mark.svg" alt=""></div>
                         <div class="location-name"><input type="text" v-model="profileChange.location"
                                 placeholder="Введите местоположение"></div>
@@ -65,29 +65,27 @@
                         <button class="cancel-btn" @click="cancelEdit" type="button">Отмена</button>
                     </div>
                 </div>
-                <div class="teams" v-if="profileInfo.teams">
-                    <div class="name-team-block">Команды</div>
-                    <div class="container-team-img">
-                        <a :href="team.link" v-for="team in profileInfo.teams"><img :src="team.image" alt=""></a>
-                    </div>
-                </div>
             </div>
 
 
 
 
             <div class="repository-block">
-                <Search :placeholderText="'Найти репозиторий'" />
-                <div class="container-repository">
-                    <div class="repository" v-for="repository in repositories">
-                        <div class="repository-info">
-                            <div class="repository-name"
-                                @click="goToRepository(repository)">{{ repository.name }}
+                <Search :placeholderText="'Найти репозиторий'" @write-input="handleSearchInput" />
+                <div v-if="repositories && repositories.length" class="container-repository">
+                    <div v-for="repository in filteredRepositories" :key="repository.id">
+                        <div class="repository">
+                            <div class="repository-info">
+                                <div class="repository-name" @click="goToRepository(repository)">{{ repository.name }}
+                                </div>
+                                <div class="repository-access">{{ repository.access }}</div>
                             </div>
-                            <div class="repository-access">{{ repository.access }}</div>
+                            <div class="last-update"> Обновлено {{ formatDate(repository.updated_at) }}</div>
                         </div>
-                        <div class="last-update"> Обновлено {{ repository.last_activities }}</div>
                     </div>
+                </div>
+                <div v-else class="empty-message">
+                    Нет доступных репозиториев
                 </div>
 
             </div>
@@ -95,7 +93,9 @@
     </div>
 </template>
 <script>
+import axios from 'axios';
 import Search from '../components/input/Search.vue';
+import { mapGetters } from 'vuex/dist/vuex.cjs.js';
 
 export default {
     name: 'ProfileView',
@@ -131,36 +131,34 @@ export default {
 
 
         return {
-            profileInfo: initialInfo,
-            profileChange: initialInfo,
+            profileInfo: {},
+            profileChange: {},
             editMode: false,
             defaultSocials: JSON.parse(JSON.stringify(defaultSocials)),
             initialSocials: JSON.parse(JSON.stringify(initialInfo.socials || [])),
             avatarFile: null,
             avatarPreview: null,
-            repositories: [
-                {
-                    name: 'Devlink',
-                    owner: 'Rellex',
-                    access: 'Public',
-                    last_activities: '30.04.2025'
-                },
-                {
-                    name: 'Progress',
-                    owner: 'Rellex',
-                    access: 'Public',
-                    last_activities: '30.04.2025'
-                },
-                {
-                    name: 'ProjectPanel.Client',
-                    owner: 'Rellex',
-                    access: 'Public',
-                    last_activities: '30.04.2025'
-                },
-            ]
+            repositories: [],
+            searchQuery: '',
+            teams: []
         }
     },
     methods: {
+        async fetchUserInfo() {
+            await axios.get(`/user/${this.$route.params.user}`,
+                {
+                    headers: {
+                        'X-Current-User-Id': this.user?.id || null
+                    }
+                }
+            )
+                .then(response => {
+                    this.repositories = response.data.projects;
+                    this.profileInfo = response.data.profile;
+                    this.profileChange = response.data.profile;
+                    this.teams = response.data.teams;
+                })
+        },
         enableEdit() {
             this.defaultSocials = [
                 { name: '', link: '' },
@@ -169,7 +167,7 @@ export default {
                 { name: '', link: '' }
             ];
 
-            this.profileChange.socials.forEach((social, index) => {
+            this.profileChange.links.forEach((social, index) => {
                 if (index < this.defaultSocials.length) {
                     this.defaultSocials[index] = { ...social };
                 }
@@ -177,16 +175,51 @@ export default {
 
             this.editMode = true;
         },
-        saveChanges() {
-            this.profileChange.socials = this.defaultSocials.filter(
+        async saveChanges() {
+            const validLinks = this.defaultSocials.filter(
                 social => social.name.trim() !== '' && social.link.trim() !== ''
             );
             this.profileInfo = JSON.parse(JSON.stringify(this.profileChange));
             this.editMode = false;
+            const formData = new FormData();
+
+
+            formData.append('bio', this.profileChange.bio || '');
+
+            formData.append('location', this.profileChange.location || '');
+
+            if (this.avatarFile) {
+                formData.append('avatar', this.avatarFile);
+            }
+
+            validLinks.forEach((link, index) => {
+                formData.append(`links[${index}][name]`, link.name);
+                formData.append(`links[${index}][url]`, link.link);
+            });
+
+            axios.post(`/user/${this.$route.params.user}/edit`, formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            )
+                .then(response => {
+                    this.profileInfo = response.data.profile;
+                    this.profileChange = response.data.profile;
+                    this.avatarPreview = null;
+                    this.avatarFile = null;
+                    if (response.data.profile.links) {
+                        this.defaultSocials = response.data.profile.links;
+                        console.log(this.defaultSocials);
+                    }
+                })
         },
 
         cancelEdit() {
             this.profileChange = JSON.parse(JSON.stringify(this.profileInfo));
+            this.avatarPreview = null;
+            this.avatarFile = null;
             this.editMode = false;
         },
         triggerFileInput() {
@@ -216,12 +249,36 @@ export default {
             reader.readAsDataURL(file)
         },
         goToRepository(repo) {
-            if (!repo.owner || !repo.name) {
+            if (!repo.owner_name || !repo.name) {
                 console.error('Ника пользователя или названия репозитория не существует');
                 return;
             }
 
-            this.$router.push(`/${repo.owner}/${repo.name}`);
+            this.$router.push(`/${repo.owner_name}/${repo.name}`);
+        },
+        formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('ru-RU', options);
+        },
+        handleSearchInput(text) {
+            this.searchQuery = text;
+        }
+    },
+    mounted() {
+        this.fetchUserInfo();
+    },
+    computed: {
+        ...mapGetters('authStore', ['user']),
+        filteredRepositories() {
+            if (!this.repositories || this.repositories.length === 0) return [];
+
+            if (this.searchQuery.trim() === '') {
+                return this.repositories;
+            }
+
+            return this.repositories.filter(repo =>
+                repo.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
         }
     },
     components: {
@@ -231,6 +288,12 @@ export default {
 }
 </script>
 <style scoped>
+.empty-message {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
 .container-profile {
     background-color: #101112;
     display: flex;
@@ -246,8 +309,8 @@ export default {
     justify-content: space-between;
     gap: clamp(5px, 2.5vw, 40px);
     margin-top: 80px;
-    width: 63vw;
-    max-width: 1200px;
+    width: 84vw;
+    max-width: 1600px;
 }
 
 .person-block {
@@ -288,6 +351,7 @@ export default {
 }
 
 .person-description {
+    word-break: break-all;
     font-size: 20px;
 }
 
@@ -330,6 +394,11 @@ export default {
     gap: 10px;
 }
 
+.svg,
+.social-icon {
+    margin-top: 2px;
+}
+
 .svg img {
     width: 25px;
     height: 25px;
@@ -361,25 +430,44 @@ export default {
 }
 
 .container-team-img {
+
     margin-top: 20px;
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
 }
+.container-team-img a{
+    overflow: hidden;
+    border-radius: 5vw;
+    width: clamp(20px,3vw, 50px);
+    height: clamp(20px,3vw, 50px);
 
+}
+.container-team-img a img{
+    width: 100%;
+    height: 100%;
+}
 .person-block textarea {
-    background-color: #dddddd;
+    background-color: #161718;
+    border: 1px solid #343A40;
+    color: #ddd;
     padding: 8px 10px;
+    box-sizing: border-box;
+    width: 100%;
     min-height: 100px;
     font-size: 16px;
     resize: none;
     border-radius: 9px;
 }
 
-.location-name input {
-    padding: 3px 5px;
-    border-radius: 6px;
-    background-color: #dddddd;
+.location-name input,
+.container-social-info input {
+    width: 100%;
+    background-color: #161718;
+    border: 1px solid #343A40;
+    color: #ddd;
+    padding: 8px 10px;
+    border-radius: 9px;
 }
 
 .container-btns {
@@ -443,11 +531,7 @@ export default {
     gap: 3px;
 }
 
-.container-social-info input {
-    padding: 3px 5px;
-    border-radius: 6px;
-    background-color: #dddddd;
-}
+
 
 
 

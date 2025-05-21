@@ -2,7 +2,7 @@
     <div class="container-task" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd" :data-task-id="task.id">
         <div class="task-actions">
             <div class="name-mission">Gang Crud # {{ task.id }}</div>
-            <Elipsis :id="task.id"/>
+            <Elipsis :id="task.id" @edit = "openTask(task, true)"/>
         </div>
         <div @click="openTask(task)" class="task-name">
             {{ task.title }}
@@ -61,8 +61,10 @@ export default {
 }
 
 .task-name {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     user-select: none;
-    width: fit-content;
     cursor: pointer;
     margin-top: 5px;
     color: #F8F9FA;

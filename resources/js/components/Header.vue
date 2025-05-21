@@ -17,7 +17,7 @@
                     </svg>
 
                     <Modal :isVisible="isPlusVisible" class="modal-plus">
-                        <router-link :to="{name:'createRepository'}" class="option-modal" ref="optionModal">
+                        <router-link :to="{ name: 'createRepository' }" class="option-modal" ref="optionModal">
                             <div class="option-svg-container">
                                 <svg width="21" height="21" class="option-svg" viewBox="0 0 21 21" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -39,7 +39,7 @@
                             </div>
                             <div class="option-name">Создать задачу</div>
                         </router-link>
-                        <router-link :to="{name:'createTeam'}" class="option-modal" id="border-none">
+                        <router-link :to="{ name: 'createTeam' }" class="option-modal" id="border-none">
                             <svg width="32" height="16" class="option-svg" viewBox="0 0 32 16" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path class="option-svg"
@@ -74,11 +74,16 @@
                 <button @keydown="(e) => actionModal(e, 'isPersonVisible', '.person-block')"
                     @click="(e) => actionModal(e, 'isPersonVisible', '.person-block')" class="person-block"
                     ref="personBlock">
-                    <div class="person-name">Rellex</div>
+                    <div class="person-name">{{ user.name }}</div>
                     <!-- Сделать фото из БД -->
-                    <div class="container-person-photo"><img class="person-photo" src="@/images/Avatar.png"
+                    <div v-if="user.avatar" class="container-person-photo"><img class="person-photo" :src="`/${user.avatar}`"
                             alt="Фото пользователя"></div>
-                    <Modal :isVisible="isPersonVisible" class="modal-person">dsfsfsdfsdf</Modal>
+                    <div v-else class="container-person-photo"><img class="person-photo" src="@/images/Avatar.png"
+                            alt="Фото пользователя"></div>
+                    <Modal :isVisible="isPersonVisible" class="modal-person">
+                        <div class="option" @click="$router.push(`/${user.name}`)"><p>Профиль</p></div>
+                        <div class="option" @click="exitFromAccount"><p>Выход</p></div>
+                    </Modal>
                 </button>
             </div>
         </div>
@@ -89,6 +94,7 @@
 <script>
 import Modal from '@/js/components/modal/Modal.vue';
 import Search from '@/js/components/input/Search.vue';
+import { mapGetters } from 'vuex/dist/vuex.cjs.js';
 
 
 
@@ -124,9 +130,15 @@ export default {
                 window.removeEventListener('focusin', this.handleClick);
             }
         },
+        async exitFromAccount() {
+            await axios.get("/logout").then((response) => {
+                this.$router.push("/login");
+                this.$store.commit('authStore/logout');
+            });
+        }
     },
     computed: {
-
+        ...mapGetters('authStore', ['isAuthenticated', 'user']),
     },
     components: {
         Modal,
@@ -146,7 +158,7 @@ export default {
 }
 
 header {
-    
+
     box-sizing: border-box;
     width: 100vw;
     height: 80px;
@@ -221,6 +233,7 @@ header {
 }
 
 .modal-plus {
+    z-index: 1;
     top: 90px;
     margin-left: 190px;
 }
@@ -295,7 +308,7 @@ header {
 .person-block {
     cursor: pointer;
     background-color: #101112;
-    padding: 1px;
+    padding: 0px 10px;
     font-family: 'Montserrat';
     display: flex;
     align-items: center;
@@ -304,7 +317,7 @@ header {
 }
 
 .person-block:focus {
-    padding: 0;
+    padding: 0px 9px;
     outline-width: 0;
     border: 1px solid #EDB200;
     border-radius: 5px;
@@ -320,19 +333,36 @@ header {
     height: 50px;
     border-radius: 25px;
     overflow: hidden;
+    border: 1px solid #202123;
 
 }
 
 .person-photo {
     width: 50px;
     height: 50px;
-    object-fit: cover;
+    object-fit: fill;
     background: none;
 }
 
 .modal-person {
+    z-index: 1;
     right: 50px;
     top: 90px;
-    width: 300px;
+    width: fit-content;
+
+
+}
+.option{    
+    padding: 0px 30px;
+    display: flex;
+    justify-content: center;
+
+}
+.option p{
+    font-size: 15px;
+    width: fit-content;
+    height: 100%;
+    padding: 10px 10px;
+    border-bottom: 1px solid #656A6F;
 }
 </style>
