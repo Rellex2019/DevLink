@@ -42,4 +42,8 @@ class Project extends Model
     {
         return $this->hasMany(RecentActivity::class);
     }
+    public function invites()
+    {
+        return $this->hasMany(Invitation::class);
+    }
 }

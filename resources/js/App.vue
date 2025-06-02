@@ -5,7 +5,7 @@
 
 <script>
 import Header from './components/Header.vue';
-
+import { mapGetters } from 'vuex/dist/vuex.cjs.js';
 
 export default {
     name: 'App',
@@ -14,17 +14,13 @@ export default {
     },
     beforeCreate() {
         this.$store.commit('authStore/initializeStore');
-    }
+    },
+
+    computed: {
+        ...mapGetters('authStore', ['user']),
+    },
 };
 
 </script>
 
-<style>
-.outer-padding {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 100%;
-    padding: 0px 50px;
-}
-</style>
+<style></style>

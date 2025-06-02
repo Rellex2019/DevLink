@@ -50,7 +50,7 @@ class User extends Authenticatable
     {
         static::created(function ($user) {
             $user->profile()->create([
-                'avatar' => 'avatars/default-avatar.svg' 
+                'avatar' => '/avatars/default-avatar.svg' 
             ]);
         });
     }

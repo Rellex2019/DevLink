@@ -10,9 +10,8 @@ const authStore = {
         setUser(state, user) {
             state.isAuthenticated = true;
             state.user = user;
-            // Устанавливаем куки на 3 дня (259200 секунд)
-            Cookies.set('user', JSON.stringify(user), { expires: 259200 / 86400 }); // 86400 секунд в дне
-            Cookies.set('isAuthenticated', 'true', { expires: 259200 / 86400 });
+            Cookies.set('user', JSON.stringify(user), { expires: 3}); // 3 дня
+            Cookies.set('isAuthenticated', 'true', { expires: 3 });
         },
         logout(state) {
             state.isAuthenticated = false;
@@ -32,9 +31,8 @@ const authStore = {
             }
         },
         updateAvatar(state, newAvatarPath) {
-            if (state.user && state.user.user_info) {
-                state.user.user_info.avatar = newAvatarPath;
-                // Обновляем куки с тем же сроком жизни
+            if (state.user) {
+                state.user.avatar = newAvatarPath;
                 Cookies.set('user', JSON.stringify(state.user), { expires: 259200 / 86400 });
             }
         },

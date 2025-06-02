@@ -43,6 +43,7 @@ export default {
     },
     methods: {
         onFocus() {
+            this.$emit('focus-input');
             this.isFocus = true;
 
             if (this.animated && this.isFocus) {
@@ -50,6 +51,7 @@ export default {
             }
         },
         onBlur() {
+            this.$emit('blur-input');
             this.isFocus = false;
 
             if (this.animated) {
@@ -69,6 +71,7 @@ export default {
         {
             this.inputContent='';
             this.empty = true;
+            this.$emit('write-input', this.inputContent);
         }
     },
 

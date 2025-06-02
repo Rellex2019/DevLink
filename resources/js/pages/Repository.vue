@@ -8,7 +8,8 @@
                 <div class="outer-padding-inblock">
                     <div class="files-block" ref="filesBlock" @dragover.prevent="handleDragOver"
                         @dragleave.prevent="handleDragLeave" @drop="handleDrop">
-                        <Search class="search-input" placeholderText="Поиск среди файлов..." />
+                        <Search class="search-input" placeholderText="Поиск среди файлов..."
+                            @write-input="handleSearchInput" />
                         <!-- Сделать фото из БД -->
                         <div class="container-person-repository">
                             <div class="container-person-photo"><img class="person-photo" src="@/images/Avatar.png"
@@ -16,8 +17,7 @@
                             <div class="person-name">{{ route.params.user }}/</div>
                         </div>
                         <div class="repository-action">
-                            <div class="repository-name" :class="{ 'selected': choicedFolder == null }"
-                                @click="choicedFolder = null">{{ route.params.repositoryName }}</div>
+                            <div class="repository-name">{{ route.params.repositoryName }}</div>
                             <div class="container-svg">
                                 <button class="btn-add" @click="addObjectArea('file')"><img class="file-add-svg"
                                         src="@/svg/file-add.svg" alt="Добавить файл"></button>
@@ -25,7 +25,8 @@
                                         src="@/svg/folder-add.svg" alt="Создать папку"></button>
                             </div>
                         </div>
-                        <div class="repository-files">
+                        <div class="repository-files" @click.self="choicedFolder = null"
+                            :class="{ 'selected': choicedFolder == null }">
                             <file-tree @main-folder="changeChoicedFolder" @choice-folder="changeChoicedFolder"
                                 @choice-file="openFile" @store-object="saveObject" @remove-file="removeFile"
                                 :choicedFile="selectedFile" :choicedFolder="choicedFolder" :fileTree="fileTree"
@@ -59,7 +60,8 @@
                 </div>
                 <div class="outer-padding-inblock">
                     <div class="team-block">
-                        <button @click="$router.push(`${$route.path}/team1/tasks`)" style="color: black;">Перейти к задачам ПРОЕКТА</button>
+                        <button @click="$router.push(`${$route.path}/team1/tasks`)" style="color: black;">Перейти к
+                            задачам ПРОЕКТА</button>
                     </div>
                 </div>
             </div>
@@ -89,7 +91,7 @@ import { useRoute } from 'vue-router';
 const projectId = ref(null);
 const files = ref([]);
 const inActiveBar = ref([]);
-
+const searchQuery = ref('');
 
 const scrollBlock = ref(null);
 const selectedFile = ref(null);
@@ -224,8 +226,7 @@ function saveObject({ data, actionType }) {
                 fileTree.value = buildFileTree(files.value);
             });
     }
-    else if(actionType === 'move')
-    {
+    else if (actionType === 'move') {
         axios.put(`/project/${projectId.value}/object/move/${data.id}`, data)
             .then(response => {
                 files.value = files.value.map(file => {
@@ -430,7 +431,7 @@ function handleClickOut(event) {
 const filesBlock = ref(null);
 function handleDragOver(event) {
     event.preventDefault();
-    event.currentTarget.style.backgroundColor = '#656a6f63'; 
+    event.currentTarget.style.backgroundColor = '#656a6f63';
 }
 
 function handleDragLeave(event) {
@@ -452,13 +453,36 @@ function handleDrop(event) {
             });
         }
 
-        draggedItem.value = null; 
-        dropTarget.value = null; 
+        draggedItem.value = null;
+        dropTarget.value = null;
     }
 }
 
+function handleSearchInput(text) {
+    searchQuery.value = text;
+    if (searchQuery.value.trim() === '') {
+        fileTree.value = buildFileTree(files.value);
+    }
+    else {
+        fileTree.value = buildFileList(filteredFiles.value);
+    }
 
+}
+function buildFileList(files) {
+    return files
+}
+const filteredFiles = computed(() => {
+    if (!files.value || files.value.length === 0) return [];
 
+    if (searchQuery.value.trim() === '') {
+        return files.value;
+    }
+
+    return files.value.filter(f =>
+        f.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        && f.type != 'folder'
+    );
+});
 
 onMounted(() => {
     fetchFiles();
@@ -480,6 +504,7 @@ onMounted(() => {
 }
 
 .container-repository-block {
+    flex: 1;
     width: 100%;
 }
 
@@ -552,11 +577,12 @@ onMounted(() => {
 }
 
 .selected {
-    background-color: #656A6F;
+    border: 1px dashed #EDB200 !important;
 }
 
 
 .repository-files {
+    border: 1px solid #EDB20000;
     height: 60vh;
     overflow-y: auto;
 }
@@ -630,7 +656,7 @@ onMounted(() => {
     border-bottom: 1px solid #656A6F;
     border-right: 1px solid #656A6F;
     width: 49.5%;
-    height: calc(100vh - 51px - 80px);
+    height: calc(100vh - 81px - 36px);
 
     background-color: #161718;
 }
@@ -737,7 +763,7 @@ onMounted(() => {
 }
 
 .team-block {
-    height: calc(100vh - 80px);
+    /* height: calc(100vh - 80px); */
 }
 
 

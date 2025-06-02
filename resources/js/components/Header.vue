@@ -1,5 +1,5 @@
 <template>
-    <header>
+    <header :style="subtitleItems ? { border: 'none' } : null">
         <div class="outer-padding">
             <div class="container-logo">
                 <img class="logo-svg" src="@/svg/logo.svg" alt="Логотип">
@@ -61,13 +61,27 @@
                     </Modal>
                 </div>
 
-                <button class="notification-block style-block">
+                <button class="notification-block style-block"
+                    @keydown="(e) => actionModal(e, 'isNotificationVisible', '.notification-block')"
+                    @click="(e) => actionModal(e, 'isNotificationVisible', '.notification-block')"
+                    ref="notificationBlock">
                     <svg width="18" height="22" class="bell-svg" viewBox="0 0 18 22" fill="none"
                         xmlns="http://www.w3.org/2000/svg">
                         <path class="bell-svg" stroke="currentColor"
                             d="M7.16234 19.9643C8.19899 21.3452 9.70685 21.3452 10.7435 19.9643M15.7932 17.1105C8.95499 17.1105 6.34703 17.1105 2.18847 17.1105C1.33193 17.1105 0.853811 16.0774 1.30531 15.3495C4.03101 10.9553 2.36006 7.4114 3.52923 4.6983C5.32747 0.525467 13.0709 0.532413 14.633 4.79925C15.6294 7.52072 14.0858 11.1014 16.6863 15.3389C17.1355 16.0709 16.652 17.1105 15.7932 17.1105Z"
                             stroke-width="2" stroke-linecap="round" />
                     </svg>
+                    <div v-if="notifyCount>0" class="notify-count">
+                        
+                    </div>
+                    <Modal :isVisible="isNotificationVisible" class="modal-notify">
+                        <div class="option-notify" v-for="notify in notifications" :key="notify.id">
+                            <p v-if="notify.type === 'inviteProject'" @click.self="$router.push(`/team/${notify.data.team.name}`)">
+                                Вашей команде <span class="selection" @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name }}</span> 
+                                пользователь <span class="selection"  @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name }}</span>  предлагает присоедениться к разработке репозитория <span class="selection" @click="$router.push(`/${notify.data.project.owner_name}/${notify.data.project.name}`)">{{ notify.data.project.name }}</span> 
+                            </p>
+                        </div>
+                    </Modal>
                 </button>
 
 
@@ -76,25 +90,35 @@
                     ref="personBlock">
                     <div class="person-name">{{ user.name }}</div>
                     <!-- Сделать фото из БД -->
-                    <div v-if="user.avatar" class="container-person-photo"><img class="person-photo" :src="`/${user.avatar}`"
-                            alt="Фото пользователя"></div>
-                    <div v-else class="container-person-photo"><img class="person-photo" src="@/images/Avatar.png"
-                            alt="Фото пользователя"></div>
+                    <div v-if="user.avatar" class="container-person-photo"><img class="person-photo"
+                            :src="`${user.avatar}`" alt="Фото пользователя"></div>
                     <Modal :isVisible="isPersonVisible" class="modal-person">
-                        <div class="option" @click="$router.push(`/${user.name}`)"><p>Профиль</p></div>
-                        <div class="option" @click="exitFromAccount"><p>Выход</p></div>
+                        <div class="option" @click="$router.push(`/${user.name}`)">
+                            <p>Профиль</p>
+                        </div>
+                        <div class="option" @click="exitFromAccount">
+                            <p>Выход</p>
+                        </div>
                     </Modal>
                 </button>
             </div>
         </div>
 
     </header>
+    <div class="subtitle">
+        <div class="subtitle-outer-padding">
+            <Subtitle :pages="subtitleItems" />
+        </div>
+    </div>
 </template>
 
 <script>
 import Modal from '@/js/components/modal/Modal.vue';
 import Search from '@/js/components/input/Search.vue';
 import { mapGetters } from 'vuex/dist/vuex.cjs.js';
+import Subtitle from './Header/Subtitle.vue';
+import axios from 'axios';
+import echo from '../echo';
 
 
 
@@ -106,6 +130,106 @@ export default {
         return {
             isPlusVisible: false,
             isPersonVisible: false,
+            isNotificationVisible: false,
+
+
+            subtitleItems: null,
+            notifyCount: 0,
+            notifications: [
+                {
+                    type: 'inviteProject',
+                    data: {
+                        "id": 49,
+                        "project_id": 1,
+                        "team_id": 2,
+                        "sender_id": 1,
+                        "status": "pending",
+                        "created_at": "2025-06-02T12:20:38.000000Z",
+                        "updated_at": "2025-06-02T12:20:38.000000Z",
+                        "project": {
+                            "id": 1,
+                            "name": "asfdsgdh",
+                            "description": "asdasdadd",
+                            "owner_name": "kir",
+                            "access": "private",
+                            "created_at": "2025-05-25T15:10:47.000000Z",
+                            "updated_at": "2025-05-25T15:10:47.000000Z"
+                        },
+                        "sender": {
+                            "id": 1,
+                            "name": "kir",
+                            "email": "dd@d",
+                            "email_verified_at": null,
+                            "created_at": "2025-05-25T15:03:27.000000Z",
+                            "updated_at": "2025-05-25T15:03:27.000000Z"
+                        },
+                        "team": {
+                            "id": 2,
+                            "owner": 1,
+                            "name": "sfdsfs",
+                            "email": "dfsfs@gmail",
+                            "logo": "/storage/logos/RtQSzecVd6deMS95Kjzxslf3x7ezHyZdwozIjxLH.png",
+                            "created_at": "2025-05-29T17:18:17.000000Z",
+                            "updated_at": "2025-05-29T17:18:23.000000Z",
+                            "owner_info": {
+                                "id": 1,
+                                "name": "kir",
+                                "email": "dd@d",
+                                "email_verified_at": null,
+                                "created_at": "2025-05-25T15:03:27.000000Z",
+                                "updated_at": "2025-05-25T15:03:27.000000Z"
+                            }
+                        }
+                    }
+                },
+                {
+                    type: 'alert',
+                    data: {
+                        "id": 49,
+                        "project_id": 1,
+                        "team_id": 2,
+                        "sender_id": 1,
+                        "status": "pending",
+                        "created_at": "2025-06-02T12:20:38.000000Z",
+                        "updated_at": "2025-06-02T12:20:38.000000Z",
+                        "project": {
+                            "id": 1,
+                            "name": "asfdsgdh",
+                            "description": "asdasdadd",
+                            "owner_name": "kir",
+                            "access": "private",
+                            "created_at": "2025-05-25T15:10:47.000000Z",
+                            "updated_at": "2025-05-25T15:10:47.000000Z"
+                        },
+                        "sender": {
+                            "id": 1,
+                            "name": "kir",
+                            "email": "dd@d",
+                            "email_verified_at": null,
+                            "created_at": "2025-05-25T15:03:27.000000Z",
+                            "updated_at": "2025-05-25T15:03:27.000000Z"
+                        },
+                        "team": {
+                            "id": 2,
+                            "owner": 1,
+                            "name": "sfdsfs",
+                            "email": "dfsfs@gmail",
+                            "logo": "/storage/logos/RtQSzecVd6deMS95Kjzxslf3x7ezHyZdwozIjxLH.png",
+                            "created_at": "2025-05-29T17:18:17.000000Z",
+                            "updated_at": "2025-05-29T17:18:23.000000Z",
+                            "owner_info": {
+                                "id": 1,
+                                "name": "kir",
+                                "email": "dd@d",
+                                "email_verified_at": null,
+                                "created_at": "2025-05-25T15:03:27.000000Z",
+                                "updated_at": "2025-05-25T15:03:27.000000Z"
+                            }
+                        }
+                    }
+                }
+            ]
+
         };
     },
     methods: {
@@ -119,7 +243,10 @@ export default {
             else if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Tab') {
                 this[varible] = false;
             }
-
+            if(mainBlock === '.notification-block')
+            {
+                this.notifyCount = 0;
+            }
 
         },
         handleClick(e, varible, mainBlock) {
@@ -135,14 +262,76 @@ export default {
                 this.$router.push("/login");
                 this.$store.commit('authStore/logout');
             });
+        },
+        async loadSubtitle() {
+            if (this.$route.params.user && this.$route.params.repositoryName &&
+                (this.$route.name == 'repository' || this.$route.name == 'repositoryTeams' || this.$route.name == 'repositorySettings')) {
+                try {
+                    const response = await axios.get(`/files/${this.$route.params.user}/${this.$route.params.repositoryName}`);
+                    const repositoryInfo = response.data;
+
+                    this.subtitleItems = repositoryInfo.isOwner ? [
+                        { name: 'Код', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}` },
+                        { name: 'Задачи', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/tasks` },
+                        { name: 'Настройки', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/settings` }
+                    ] : [
+                        { name: 'Код', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}` },
+                        { name: 'Задачи', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/tasks` }
+                    ];
+                } catch (error) {
+                    console.error(error);
+                }
+            } else if (this.$route.params.team && this.$route.name == 'team') {
+                const response = await axios.get(`/team/${this.$route.params.team}/get`);
+                const teamInfo = response.data;
+                this.subtitleItems = teamInfo.isMember ? [
+                    { name: 'Участники', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
+                    { name: 'Репозитории', query: 'repository', url: `${this.$route.params.team}?chapter=repository` },
+                    { name: 'Настройки', query: 'settings', url: `${this.$route.params.team}?chapter=settings` }
+                ] : [
+                    { name: 'Обзор команды', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
+                ];
+            }
+        },
+        newNotification(data, type) {
+            this.notifications.push({
+                'type': type,
+                'data': data
+            });
+            this.notifyCount++;
+            console.log(this.notifications);
         }
     },
     computed: {
         ...mapGetters('authStore', ['isAuthenticated', 'user']),
     },
+    watch: {
+        '$route': 'loadSubtitle'
+    },
+    mounted() {
+        this.loadSubtitle();
+        // Для владельца команды - уведомления о новых приглашениях
+        echo.private(`team.${this.user.id}`)
+            .listen('TeamInvited', (data) => {
+                console.log('New invitation:', data);
+                this.newNotification(data.invitation, 'inviteProject');
+            });
+
+        // Для отправителя - уведомления о принятии/отклонении
+        echo.private(`user.${this.user.id}`)
+            .listen('.invitation.accepted', (data) => {
+                console.log('Invitation accepted:', data);
+                // this.showAcceptNotification(data.invitation);
+            })
+            .listen('.invitation.rejected', (data) => {
+                console.log('Invitation rejected:', data);
+                // this.showRejectNotification(data.invitation);
+            });
+    },
     components: {
         Modal,
-        Search
+        Search,
+        Subtitle
     },
 };
 
@@ -158,7 +347,7 @@ export default {
 }
 
 header {
-
+    flex: none;
     box-sizing: border-box;
     width: 100vw;
     height: 80px;
@@ -196,7 +385,7 @@ header {
 
 
 .style-block {
-    cursor: pointer;
+
     height: 30px;
     width: 30px;
     display: flex;
@@ -290,7 +479,6 @@ header {
     background: none;
     color: #656565;
 }
-
 .notification-block:hover {
     border-color: #EDB200;
 }
@@ -302,7 +490,15 @@ header {
 .notification-block:focus .bell-svg {
     color: #EDB200;
 }
-
+.notify-count{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: red;
+    position: absolute;
+    margin-left: 27px;
+    margin-bottom: 27px;
+}
 
 
 .person-block {
@@ -349,20 +545,69 @@ header {
     right: 50px;
     top: 90px;
     width: fit-content;
-
-
 }
-.option{    
+.modal-notify {
+    z-index: 1;
+    right: 50px;
+    top: 90px;
+    width: 400px;
+}
+
+.option {
     padding: 0px 30px;
     display: flex;
     justify-content: center;
 
 }
-.option p{
+
+.option p {
+    cursor: pointer;
     font-size: 15px;
     width: fit-content;
     height: 100%;
     padding: 10px 10px;
     border-bottom: 1px solid #656A6F;
+}
+.option-notify {
+    padding: 0px 20px;
+    display: flex;
+    justify-content: center;
+
+}
+
+.option-notify p {
+    text-align: start;
+    cursor: pointer;
+    font-size: 15px;
+    width: fit-content;
+    height: 100%;
+    padding: 10px 0px;
+    border-bottom: 1px solid #656A6F;
+    word-break: keep-all;
+}
+.option-notify p:hover{
+    background-color: #202123;
+}
+.subtitle {
+    background-color: #101112;
+}
+
+.subtitle-outer-padding {
+    padding: 0px 50px;
+    border-bottom: 1px solid #656A6F;
+}
+
+.outer-padding {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    padding: 0px 50px;
+}
+.selection{
+    color: #EDB200;
+}
+.selection:hover{
+    text-decoration: underline;
 }
 </style>

@@ -8,6 +8,74 @@ use Illuminate\Support\Facades\Storage;
 
 class TeamController extends Controller
 {
+    public function index()
+    {
+        $teams = Team::all();
+        return response()->json($teams);
+    }
+    public function show($teamName)
+    {
+        $data = [];
+        $team = Team::where('name', $teamName)->first();
+        $members = $team->users->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->pivot->role, // Получаем роль из pivot
+                'profile' => $user->profile // Загружаем профиль
+            ];
+        });
+        $projects = $team->projects;
+        $isMember = false;
+        $isOwner = false;
+        if (auth()->check()) {
+            $isMember = $team->users->contains(auth()->id());
+            $isOwner = $team->users->where('id', auth()->id())->where('pivot.role', 'owner')->isNotEmpty();
+        }
+        $team->setHidden(['users', 'projects']);
+
+        $data = [
+            'team' => $team,
+            'members' => $members,
+            'projects' => $projects,
+            'isMember' => $isMember,
+            'isOwner' => $isOwner
+        ];
+
+        return response()->json($data);
+    }
+
+
+    public function invites($teamId)
+    {
+        $team = Team::find($teamId);
+        $invites = $team->invites->where('status', 'pending')->load(['project', 'sender']);
+        return response()->json($invites);
+    }
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        if (empty($query)) {
+            return response()->json([]);
+        }
+
+        $teams = Team::where('name', 'like', '%' . $query . '%')
+            ->withCount('users')
+            ->limit(10)
+            ->get()
+            ->map(function ($team) {
+                return [
+                    'id' => $team->id,
+                    'name' => $team->name,
+                    'logo' => $team->logo,
+                    'members_count' => $team->users_count
+                ];
+            });
+
+        return response()->json($teams);
+    }
     public function store(Request $request)
     {
         $newTeam = Team::create([
@@ -44,6 +112,12 @@ class TeamController extends Controller
         }
 
         $team->save();
+        return response()->json($team);
+    }
+    public function destroy($teamId)
+    {
+        $team = Team::find($teamId);
+        $team->delete();
         return response()->json($team);
     }
 }

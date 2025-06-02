@@ -9,6 +9,9 @@ import RepositoryCreate from './pages/RepositoryCreate.vue';
 import TeamCreateView from './pages/TeamCreateView.vue';
 import Profile from './pages/ProfileView.vue';
 import TasksView from './pages/TasksView.vue';
+import RepositoryTasks from './components/repository/RepositoryTasks.vue';
+import TeamView from './pages/TeamView.vue';
+import RepositorySettings from './components/repository/RepositorySettings.vue';
 
 const isAuthenticated = (to, from, next) => {
     const authenticated = store.getters['authStore/isAuthenticated'];
@@ -65,6 +68,12 @@ const router = createRouter({
             beforeEnter: isAuthenticated
         },
         {
+            path: '/team/:team',
+            name: 'team',
+            component: TeamView,
+            beforeEnter: isAuthenticated
+        },
+        {
             path: '/:user', 
             name: 'profile',
             component: Profile,
@@ -80,6 +89,19 @@ const router = createRouter({
             path: '/:user/:repositoryName',
             name: 'repository',
             component: Repository,
+            beforeEnter: isAuthenticated
+        },
+        {
+            path: '/:user/:repositoryName/tasks',
+            name: 'repositoryTeams',
+            component: RepositoryTasks,
+            beforeEnter: isAuthenticated
+        },
+        {
+            // Доделать
+            path: '/:user/:repositoryName/settings',
+            name: 'repositorySettings',
+            component: RepositorySettings,
             beforeEnter: isAuthenticated
         },
 

@@ -31,4 +31,12 @@ class Team extends Model
     {
         return $this->hasMany(TaskStatus::class);
     }
+    public function ownerInfo()
+    {
+        return $this->belongsTo(User::class, 'owner');
+    }
+    public function invites()
+    {
+        return $this->hasMany(Invitation::class);
+    }
 }

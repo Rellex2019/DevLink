@@ -11,7 +11,6 @@
                     <input v-model="task.title" placeholder="Заголовок задания" class="input-title name">
                     <div class="add-info">
                         <div class="container-status">
-                            {{ status }}
                             <div class="circle-color" :style="{borderColor: status.color, backgroundColor: status.color+'50', borderStyle: 'solid', borderWidth: '1px'}">
                             </div>
                             <div class="status-name">{{ status.name }}</div>

@@ -178,8 +178,8 @@ export default {
     gap: 10px;
     overflow-y: auto;
     box-sizing: border-box;
-    min-height: 450px;
-    max-height: 450px;
+    min-height: 350px;
+    max-height: 350px;
 }
 
 .container-tasks::-webkit-scrollbar {

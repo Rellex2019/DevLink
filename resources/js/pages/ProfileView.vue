@@ -21,7 +21,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="teams" v-if="teams">
+                <div class="teams" v-if="teams.length > 0">
                     <div class="name-team-block">Команды</div>
                     <div class="container-team-img">
                         <a @click="$router.push(`/team/${team.name}`)" v-for="team in teams"><img :src="team.logo" alt=""></a>
@@ -36,7 +36,7 @@
                     <img v-else-if="profileInfo.avatar" :src="profileInfo.avatar" alt="avatar"
                         class="img-avatar avatar-change">
                     <img v-else src="@/svg/default-avatar.svg" alt="avatar" class="img-avatar avatar-change">
-                    <input style="display: none;" @change="handleFileUpload" ref="fileInput" type="file">
+                    <input style="display: none;" @change="handleFileUpload" ref="fileInput" type="file" accept="image/jpeg, image/png">
                     <div class="plus-img" v-if="!avatarPreview">+</div>
                 </div>
                 <div class="person-name">{{ profileInfo.name }}</div>
@@ -96,6 +96,7 @@
 import axios from 'axios';
 import Search from '../components/input/Search.vue';
 import { mapGetters } from 'vuex/dist/vuex.cjs.js';
+import store from '../store';
 
 export default {
     name: 'ProfileView',
@@ -143,6 +144,11 @@ export default {
             teams: []
         }
     },
+    watch:{
+        '$route'(to, from){
+            this.fetchUserInfo();
+        }
+    },
     methods: {
         async fetchUserInfo() {
             await axios.get(`/user/${this.$route.params.user}`,
@@ -163,8 +169,7 @@ export default {
             this.defaultSocials = [
                 { name: '', link: '' },
                 { name: '', link: '' },
-                { name: '', link: '' },
-                { name: '', link: '' }
+                { name: '', link: '' },     
             ];
 
             this.profileChange.links.forEach((social, index) => {
@@ -213,6 +218,7 @@ export default {
                         this.defaultSocials = response.data.profile.links;
                         console.log(this.defaultSocials);
                     }
+                    store.commit('authStore/updateAvatar', response.data.profile.avatar)
                 })
         },
 
@@ -230,13 +236,13 @@ export default {
             if (!file) return
 
             if (!file.type.match('image/png') && !file.type.match('image/jpeg')) {
-                alert('Пожалуйста, выберите изображение')
+                this.$showAlert('Пожалуйста, выберите изображение', 'error')
                 return
             }
 
 
             if (file.size > 2 * 1024 * 1024) {
-                alert('Файл слишком большой. Максимальный размер - 2MB')
+                this.$showAlert('Файл слишком большой. Максимальный размер - 2MB','error')
                 return
             }
 
@@ -299,7 +305,7 @@ export default {
     display: flex;
     justify-content: center;
     width: 100vw;
-    min-height: calc(100vh - 80px);
+    min-height: calc(100vh - 81px);
     font-family: 'Montserrat';
     font-size: 20px;
 }

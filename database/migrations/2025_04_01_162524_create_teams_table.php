@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('owner')->constrained('users')->cascadeOnDelete();
             $table->string('name')->unique();
             $table->string('email')->unique();
-            $table->string('logo')->nullable()->default('/storage/logos/default-logo.jpg');
+            $table->string('logo')->nullable()->default('/storage/teams/default-team.png');
             $table->timestamps();
         });
     }

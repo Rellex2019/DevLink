@@ -18,7 +18,7 @@ class FileController extends Controller
         $this->fileService = $fileService;
     }
 
-    public function index( string $username, string $projectName, ?int $parentId = null): JsonResponse
+    public function index(Request $request, string $username, string $projectName, ?int $parentId = null): JsonResponse
     {
         $project = Project::with('owner')
             ->whereHas('owner', function ($query) use ($username) {
@@ -26,10 +26,13 @@ class FileController extends Controller
             })
             ->where('name', $projectName)
             ->first();
+
+        $isOwner = $project->owner->id === $request->user()->id;
         $files = $this->fileService->getProjectFiles($project->id, $parentId);
         return response()->json([
             'files'=>$files,
-            'project_id' => $project->id
+            'project_id' => $project->id,
+            'isOwner' => $isOwner
         ]);
     }
 

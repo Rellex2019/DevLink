@@ -110,7 +110,7 @@ watch(() => props.id, (newId, oldId) => {
 });
 
 watch(() => props.content, (newVal) => {
-  if (editor && newVal !== editor.getValue()) {
+  if (editor && newVal !== undefined && newVal !== null && newVal !== editor.getValue()) {
     editor.setValue(newVal);
   }
 });

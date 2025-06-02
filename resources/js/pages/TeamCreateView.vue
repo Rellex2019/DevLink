@@ -119,7 +119,7 @@ export default {
                 }
             )
                 .then(response => {
-                    // $router.push('/')
+                    this.$router.push('/')
                 })
 
         },
