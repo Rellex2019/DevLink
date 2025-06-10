@@ -27,7 +27,7 @@
                             </div>
                             <div class="option-name">Новый репозиторий</div>
                         </router-link>
-                        <router-link :to="'/task/create'" class="option-modal">
+                        <!-- <router-link :to="'/task/create'" class="option-modal">
                             <div class="option-svg-container">
                                 <svg width="20" height="20" class="option-svg" viewBox="0 0 20 20" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -38,7 +38,7 @@
 
                             </div>
                             <div class="option-name">Создать задачу</div>
-                        </router-link>
+                        </router-link> -->
                         <router-link :to="{ name: 'createTeam' }" class="option-modal" id="border-none">
                             <svg width="32" height="16" class="option-svg" viewBox="0 0 32 16" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
@@ -76,7 +76,12 @@
                     </div>
                     <Modal :isVisible="isNotificationVisible" class="modal-notify">
                         <div class="option-notify" v-for="notify in notifications" :key="notify.id">
-                            <p v-if="notify.type === 'inviteProject'" @click.self="$router.push(`/team/${notify.data.team.name}`)">
+                            <p v-if="notify.type === 'inviteTeam'" @click.self="$router.push(`/${notify.data.user.name}`)">
+                                Пользователь <span class="selection"  @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name }}</span>
+                                предлагает вам вступить в команду <span class="selection" @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name }}</span> 
+                            </p>
+
+                            <p v-if="notify.type === 'inviteProject'" @click.self="$router.push(`/team/${notify.data.team.name}?chapter=repository`)">
                                 Вашей команде <span class="selection" @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name }}</span> 
                                 пользователь <span class="selection"  @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name }}</span>  предлагает присоедениться к разработке репозитория <span class="selection" @click="$router.push(`/${notify.data.project.owner_name}/${notify.data.project.name}`)">{{ notify.data.project.name }}</span> 
                             </p>
@@ -292,6 +297,9 @@ export default {
                     { name: 'Обзор команды', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
                 ];
             }
+            else{
+                this.subtitleItems = [];
+            }
         },
         newNotification(data, type) {
             this.notifications.push({
@@ -313,15 +321,15 @@ export default {
         // Для владельца команды - уведомления о новых приглашениях
         echo.private(`team.${this.user.id}`)
             .listen('TeamInvited', (data) => {
-                console.log('New invitation:', data);
+                console.log('New invitation in project:', data);
                 this.newNotification(data.invitation, 'inviteProject');
             });
 
         // Для отправителя - уведомления о принятии/отклонении
         echo.private(`user.${this.user.id}`)
-            .listen('.invitation.accepted', (data) => {
-                console.log('Invitation accepted:', data);
-                // this.showAcceptNotification(data.invitation);
+            .listen('UserInvited', (data) => {
+                console.log('New invitation in team:', data);
+                this.newNotification(data.invite, 'inviteTeam');
             })
             .listen('.invitation.rejected', (data) => {
                 console.log('Invitation rejected:', data);

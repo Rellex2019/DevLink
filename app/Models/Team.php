@@ -12,6 +12,8 @@ class Team extends Model
         'email',
         'logo',
     ];
+
+
     public function users()
     {
         return $this->belongsToMany(User::class)->withPivot('role');
@@ -38,5 +40,9 @@ class Team extends Model
     public function invites()
     {
         return $this->hasMany(Invitation::class);
+    }
+    public function invitedPeople()
+    {
+        return $this->hasMany(InviteTeam::class);
     }
 }

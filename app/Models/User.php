@@ -92,4 +92,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(RecentActivity::class);
     }
+
+    public function invites()
+    {
+        return $this->hasMany(InviteTeam::class);
+    }
 }

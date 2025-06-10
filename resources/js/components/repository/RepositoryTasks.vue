@@ -69,7 +69,8 @@
 
                     </div>
                     <div class="container-added-teams">
-                        <p class="title-teams">Выбранные команды</p>
+                        <p class="title-teams" v-if="inviteTeamList && inviteTeamList.length">Выбранные команды</p>
+                        <p class="title-teams" v-else>Выберите команды для добавления</p>
                         <div class="container-teams">
                             <div class="team-added" v-for="team in inviteTeamList" @click="deleteTeam(team)"
                                 :key="team.id">
@@ -132,7 +133,13 @@ export default {
                 })
                 axios.post(`/project/${this.$route.params.repositoryName}/teams/invite`, { team_ids: teamIds })
                     .then(response => {
+                        this.$showAlert('Приглашения успешно отправлены', 'accept');
+                        this.currentUser = null;
                     })
+                    .catch(e => {
+                        this.$showAlert('Ошибка при отправке приглаений. Попробуйте позже', 'error');
+                    }
+                    )
             }
 
         },
@@ -154,7 +161,6 @@ export default {
             this.inviteTeamName = text;
             if (this.inviteTeamName.length > 1) {
                 try {
-                    // Запрос к API для поиска команд
                     const response = await axios.get('/teams/search', {
                         params: { query: this.inviteTeamName }
                     });
@@ -177,6 +183,9 @@ export default {
         deleteTeam(teamToDelete) {
             axios.delete(`/project/${this.$route.params.repositoryName}/teams/invite/${teamToDelete.id}`)
                 .then(response => {
+                    this.inviteTeamList = this.inviteTeamList.filter(team => team.id !== teamToDelete.id);
+                })
+                .catch(e=>{
                     this.inviteTeamList = this.inviteTeamList.filter(team => team.id !== teamToDelete.id);
                 })
 

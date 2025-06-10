@@ -1,6 +1,6 @@
 <template>
     <div class="container-profile">
-        <component :is="currentComponent" :teamInfo="teamInfo" @team-update="handleTeamInfoUpdate"/>
+        <component :is="currentComponent" :teamInfo="teamInfo" @refresh="fetchUserInfo" @team-update="handleTeamInfoUpdate"/>
     </div>
 </template>
 <script>
@@ -76,5 +76,6 @@ export default {
     min-height: calc(100vh - 80px - 37px);
     font-family: 'Montserrat';
     font-size: 20px;
+
 }
 </style>

@@ -24,7 +24,8 @@
                 <div class="teams" v-if="teams.length > 0">
                     <div class="name-team-block">Команды</div>
                     <div class="container-team-img">
-                        <a @click="$router.push(`/team/${team.name}`)" v-for="team in teams"><img :src="team.logo" alt=""></a>
+                        <a @click="$router.push(`/team/${team.name}`)" v-for="team in teams"><img :src="team.logo"
+                                alt=""></a>
                     </div>
                 </div>
             </div>
@@ -36,7 +37,8 @@
                     <img v-else-if="profileInfo.avatar" :src="profileInfo.avatar" alt="avatar"
                         class="img-avatar avatar-change">
                     <img v-else src="@/svg/default-avatar.svg" alt="avatar" class="img-avatar avatar-change">
-                    <input style="display: none;" @change="handleFileUpload" ref="fileInput" type="file" accept="image/jpeg, image/png">
+                    <input style="display: none;" @change="handleFileUpload" ref="fileInput" type="file"
+                        accept="image/jpeg, image/png">
                     <div class="plus-img" v-if="!avatarPreview">+</div>
                 </div>
                 <div class="person-name">{{ profileInfo.name }}</div>
@@ -69,23 +71,49 @@
 
 
 
-
-            <div class="repository-block">
-                <Search :placeholderText="'Найти репозиторий'" @write-input="handleSearchInput" />
-                <div v-if="repositories && repositories.length" class="container-repository">
-                    <div v-for="repository in filteredRepositories" :key="repository.id">
-                        <div class="repository">
-                            <div class="repository-info">
-                                <div class="repository-name" @click="goToRepository(repository)">{{ repository.name }}
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 35px;">
+                <div class="repository-block">
+                    <Search :placeholderText="'Найти репозиторий'" @write-input="handleSearchInput" />
+                    <div v-if="filteredRepositories && filteredRepositories.length > 0" class="container-repository">
+                        <div v-for="repository in filteredRepositories" :key="repository.id">
+                            <div class="repository">
+                                <div class="repository-info">
+                                    <div class="repository-name" @click="goToRepository(repository)">{{ repository.name
+                                        }}
+                                    </div>
+                                    <div class="repository-access">{{ repository.access }}</div>
                                 </div>
-                                <div class="repository-access">{{ repository.access }}</div>
+                                <div class="last-update"> Обновлено {{ formatDate(repository.updated_at) }}</div>
                             </div>
-                            <div class="last-update"> Обновлено {{ formatDate(repository.updated_at) }}</div>
                         </div>
                     </div>
+                    <div v-else class="empty-message">
+                        Нет доступных репозиториев
+                    </div>
+
                 </div>
-                <div v-else class="empty-message">
-                    Нет доступных репозиториев
+                <div class="invites-block-container" v-if="isOwner">
+                    <p>Приглашения</p>
+                    <div v-if="invites && invites.length" class="invites-block">
+                        <div class="invite" v-for="invite in invites" :key="invite.id">
+                            <div style="display: flex;align-items: center;gap: 15px;">
+                                <div class="img-cont">
+                                    <img :src="invite.team.logo" alt="">
+                                </div>
+                                <div @click="$router.push(`/team/${invite.team.name}`)" class="name-team">
+                                    {{ invite.team.name }}
+                                </div>
+                            </div>
+                            <div class="action-btns">
+                                <button class="accept-btn" @click="acceptInvite(invite.id)">Принять</button>
+                                <button class="reject-btn" @click="rejectInvite(invite.id)">Отклонить</button>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div v-else style="text-align: start;" class="empty-message">
+                        У вас нет ни одного приглашения
+                    </div>
                 </div>
 
             </div>
@@ -97,32 +125,12 @@ import axios from 'axios';
 import Search from '../components/input/Search.vue';
 import { mapGetters } from 'vuex/dist/vuex.cjs.js';
 import store from '../store';
+import echo from '../echo';
 
 export default {
     name: 'ProfileView',
     data() {
-        // ИЗ БЕКА, пока так
-        const initialInfo = {
-            name: 'Имя пользователя',
-            bio: 'Немного о себе. Я делал тун тун тун захура когда работал в прогрессе',
-            location: 'Астрахань',
-            image: 'http://localhost:8000/avatars/default-avatar.svg',
-            socials: [
-                {
-                    name: 'VK',
-                    link: 'https://vk.com/thekirz'
-                }
-            ],
-            teams: [
-                {
-                    name: 'Gang',
-                    link: '#',
-                    image: 'http://localhost:8000/teams/team1.png'
-                }
-            ]
 
-
-        };
         const defaultSocials = [
             { name: '', link: '' },
             { name: '', link: '' },
@@ -132,20 +140,22 @@ export default {
 
 
         return {
+            isOwner: false,
             profileInfo: {},
             profileChange: {},
             editMode: false,
             defaultSocials: JSON.parse(JSON.stringify(defaultSocials)),
-            initialSocials: JSON.parse(JSON.stringify(initialInfo.socials || [])),
+            initialSocials: [],
             avatarFile: null,
             avatarPreview: null,
             repositories: [],
             searchQuery: '',
-            teams: []
+            teams: [],
+            invites: []
         }
     },
-    watch:{
-        '$route'(to, from){
+    watch: {
+        '$route'(to, from) {
             this.fetchUserInfo();
         }
     },
@@ -163,13 +173,23 @@ export default {
                     this.profileInfo = response.data.profile;
                     this.profileChange = response.data.profile;
                     this.teams = response.data.teams;
+                    this.isOwner = response.data.isOwner;
+                    if (this.isOwner) {
+                        this.fetchInvites();
+                    }
+                })
+        },
+        async fetchInvites() {
+            axios.get(`/user/${this.$route.params.user}/invites`)
+                .then(response => {
+                    this.invites = response.data;
                 })
         },
         enableEdit() {
             this.defaultSocials = [
                 { name: '', link: '' },
                 { name: '', link: '' },
-                { name: '', link: '' },     
+                { name: '', link: '' },
             ];
 
             this.profileChange.links.forEach((social, index) => {
@@ -242,7 +262,7 @@ export default {
 
 
             if (file.size > 2 * 1024 * 1024) {
-                this.$showAlert('Файл слишком большой. Максимальный размер - 2MB','error')
+                this.$showAlert('Файл слишком большой. Максимальный размер - 2MB', 'error')
                 return
             }
 
@@ -268,10 +288,37 @@ export default {
         },
         handleSearchInput(text) {
             this.searchQuery = text;
+        },
+        acceptInvite(inviteId) {
+            axios.post(`user/invite/${inviteId}/accept`)
+                .then(response => {
+                    this.deleteFromInvites(inviteId);
+                })
+
+        },
+        rejectInvite(inviteId) {
+            axios.post(`user/invite/${inviteId}/reject`)
+                .then(response => {
+                    this.deleteFromInvites(inviteId);
+                })
+        },
+        deleteFromInvites(id) {
+            this.invites = this.invites.filter(i => {
+                i.id != id
+            })
         }
     },
     mounted() {
         this.fetchUserInfo();
+
+
+
+        echo.private(`user.${this.user.id}`)
+            .listen('UserInvited', (data) => {
+                console.log('New invitation in team:', data);
+                this.invites.push(data.invite);
+                this.newNotification(data.invite, 'inviteTeam');
+            })
     },
     computed: {
         ...mapGetters('authStore', ['user']),
@@ -303,9 +350,10 @@ export default {
 .container-profile {
     background-color: #101112;
     display: flex;
-    justify-content: center;
+    align-items: center;
     width: 100vw;
-    min-height: calc(100vh - 81px);
+    flex-direction: column;
+    height: 100%;
     font-family: 'Montserrat';
     font-size: 20px;
 }
@@ -316,6 +364,7 @@ export default {
     gap: clamp(5px, 2.5vw, 40px);
     margin-top: 80px;
     width: 84vw;
+    height: fit-content;
     max-width: 1600px;
 }
 
@@ -442,17 +491,20 @@ export default {
     gap: 12px;
     flex-wrap: wrap;
 }
-.container-team-img a{
+
+.container-team-img a {
     overflow: hidden;
     border-radius: 5vw;
-    width: clamp(20px,3vw, 50px);
-    height: clamp(20px,3vw, 50px);
+    width: clamp(20px, 3vw, 50px);
+    height: clamp(20px, 3vw, 50px);
 
 }
-.container-team-img a img{
+
+.container-team-img a img {
     width: 100%;
     height: 100%;
 }
+
 .person-block textarea {
     background-color: #161718;
     border: 1px solid #343A40;
@@ -548,13 +600,14 @@ export default {
 
 /* РЕПОЗИТОРИИ */
 .repository-block {
-    flex: 1;
+    height: 50%;
 }
 
 .container-repository {
     margin-top: 20px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
     gap: 15px;
 }
 
@@ -597,5 +650,91 @@ export default {
 .last-update {
     font-size: 15px;
     color: #F8F9FA60;
+}
+
+
+
+
+/* Приглашения */
+
+.invites-block-container {
+    color: #ddd;
+    width: 50%;
+    height: fit-content;
+    min-height: 200px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.invites-block-container p {
+    font-weight: 500;
+}
+
+.invites-block {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.invite {
+    padding: 10px 10px;
+    border: 1px solid #4B4F53;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.img-cont {
+    width: clamp(20px, 3vw, 50px);
+    height: clamp(20px, 3vw, 50px);
+    overflow: hidden;
+    border-radius: 5vw;
+}
+
+.img-cont img {
+    width: 100%;
+    height: 100%;
+}
+
+.name-team:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.action-btns {
+    display: flex;
+    gap: 15px;
+}
+
+.action-btns button {
+    font-size: 16px;
+    padding: 9px 30px;
+}
+
+.accept-btn {
+    border: 1px solid #EDB200;
+    border-radius: 5px;
+    background: none;
+    color: #EDB200;
+}
+
+.accept-btn:hover {
+    background-color: #EDB20030;
+}
+
+.reject-btn {
+    border: 1px solid #4B4F53;
+    border-radius: 5px;
+    background: none;
+    color: #6e767d;
+}
+
+.reject-btn:hover {
+    color: #FF0E0E;
+    border-color: #FF0E0E;
 }
 </style>

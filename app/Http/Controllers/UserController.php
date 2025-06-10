@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InviteTeam;
 use App\Models\Link;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -37,7 +40,28 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
 
+        if (empty($query)) {
+            return response()->json([]);
+        }
+        $users = User::where('name', 'like', '%' . $query . '%')
+            ->where('id', '!=' ,$request->user()->id)
+            ->limit(10)
+            ->get()
+            ->load(['profile'])
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->profile->avatar,
+                ];
+            });
+
+        return response()->json($users);
+    }
     public function update(Request $request, $username)
     {
         $user = User::where('name', $username)->firstOrFail();
@@ -76,15 +100,12 @@ class UserController extends Controller
             $linksToSync = [];
 
             foreach ($request->links as $linkData) {
-                // Поиск существующей ссылки по URL
                 $link = Link::where('url', $linkData['url'])->first();
-        
+
                 if ($link) {
-                    // Если ссылка существует, обновляем её название
                     $link->update(['name' => $linkData['name']]);
                     $linksToSync[] = $link->id;
                 } else {
-                    // Если ссылки нет, создаём новую
                     $link = Link::create([
                         'url' => $linkData['url'],
                         'name' => $linkData['name']
@@ -116,7 +137,42 @@ class UserController extends Controller
         ]);
     }
 
+    public function invites(Request $request, $teamId)
+    {
+        $user = $request->user();
+        $invites = $user->invites->load(['sender', 'team']);
+        return response()->json($invites);
+    }
+    public function acceptInvite(InviteTeam $invite)
+    {
 
+
+        if (auth()->id() !== $invite->user_id) {
+            return response()->json(['message' => 'Недостаточно прав'], 403);
+        }
+        DB::transaction(function () use ($invite) {
+            $invite->user->teams()->attach($invite->team_id);
+
+            $invite->delete();
+
+            // event(new InvitationAccepted($invite));
+        });
+
+        return response()->json(['message' => 'Приглашение принято']);
+    }
+
+    public function rejectInvite(InviteTeam $invite)
+    {
+
+        if (auth()->id() !== $invite->user->id) {
+            return response()->json(['message' => 'Недостаточно прав'], 403);
+        }
+
+        $invite->delete();
+        // event(new InvitationRejected($invite));
+
+        return response()->json(['message' => 'Приглашение отклонено']);
+    }
 
     /**
      * Удалить неиспользуемые ссылки

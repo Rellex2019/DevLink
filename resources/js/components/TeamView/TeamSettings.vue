@@ -152,7 +152,9 @@ export default {
                         console.error('Error deleting team:', error);
                     });
             }
-        }
+        },
+        
+        
     },
     computed: {
         ...mapGetters('authStore', ['isAuthenticated', 'user']),

@@ -8,6 +8,7 @@ use App\Events\TeamInvited;
 use App\Models\Invitation;
 use App\Models\Project;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -156,7 +157,9 @@ class ProjectController extends Controller
         foreach ($request->team_ids as $teamId) {
             $exists = Invitation::where('project_id', $project->id)
                 ->where('team_id', $teamId)
-                ->exists();
+                ->exists()
+                || DB::table('project_team')->where('team_id', $teamId)
+                ->where('project_id', $project->id)->exists();
 
             if (!$exists) {
                 $invitation = Invitation::create([
@@ -233,4 +236,44 @@ class ProjectController extends Controller
 
         return response()->json(['message' => 'Приглашение отклонено']);
     }
+
+
+
+
+
+    public function changeName(Request $request, Project $project)
+    {
+        $project->update(['name' => $request->name]);
+        return response()->json([
+            'message' => 'Имя репозитория изменено',
+            'name' => $project->name,
+            'owner_name' => $project->owner_name
+        ]);
+    }
+    public function changeVisibility(Request $request, Project $project)
+    {
+        $project->update(['access' => $request->visibility]);
+        return response()->json([
+            'message' => 'Модификатор видимости изменён',
+            'access' => $project->access,
+        ]);
+    }
+    public function changeOwner(Request $request, Project $project)
+    {
+        $newOwner = User::find($request->owner);
+        $project->update(['owner_name' => $newOwner->name]);
+        return response()->json([
+            'message' => 'Владелец репозетория изменен',
+            'name' => $project->name,
+            'owner_name' => $project->owner_name,
+        ]);
+    }
+    public function destroyRepository(Project $project)
+    {
+        $project->delete();
+        return response()->json([
+            'message' => 'Репозиторий был удален навсегда :(',
+        ]);
+    }
+
 }

@@ -1,8 +1,8 @@
 <template>
     <div :style="{ width: widthPer + 'vw' }" :class="['input-found-container', { focused: isFocus }], searchInput">
-        <img class="loop-svg" src="@/svg/loop.svg" alt="Лупа">
+        <img v-if="svg" class="loop-svg" src="@/svg/loop.svg" alt="Лупа">
         <input class="input-search" @focus="onFocus" @input="handleChange" @blur="onBlur" v-model="inputContent"
-            type="text" :placeholder="placeholderText">
+            type="text" :placeholder="placeholderText" :style="!svg ? {paddingRight: '10px', paddingLeft: '10px'}:null">
         <div class="cont" @click="handleClickClear"><svg v-if="!empty" class="delete-svg"  viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 1L6.5 6.5M12 12L6.5 6.5M6.5 6.5L1 12M6.5 6.5L12 1" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" />
@@ -24,6 +24,7 @@ export default {
             empty: ref(true)
         };
     },
+    emits:['focus-input', 'blur-input', 'write-input'],
     props: {
         searchInput: {
             required: false,
@@ -38,8 +39,22 @@ export default {
         animated: {
             type: Boolean,
             required: false,
+        },
+        svg:{
+            type: Boolean,
+            default: true
+        },
+        content:{
+            type: String,
+            required: false
         }
 
+    },
+    watch:{
+        content(newInfo, oldInfo)
+        {
+            this.inputContent = newInfo;
+        }
     },
     methods: {
         onFocus() {
@@ -72,6 +87,8 @@ export default {
             this.inputContent='';
             this.empty = true;
             this.$emit('write-input', this.inputContent);
+            this.$emit('clear-input', this.inputContent);
+
         }
     },
 

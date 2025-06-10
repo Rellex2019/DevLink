@@ -48,46 +48,78 @@
             </div>
         </div>
         <div class="repository-block" v-if="accessFilter == 'invites'">
-            <div v-if="invites.length > 0" class="invites-block-container">
+            <div class="btn-chapters-container">
+                <button @click="inviteChapter = 'received'"
+                    :class="{ 'active': inviteChapter === 'received' }">Вам</button>
+                <button @click="inviteChapter = 'sent'" :class="{ 'active': inviteChapter === 'sent' }">От вас</button>
+            </div>
+            <div v-if="inviteChapter == 'received'">
+                <div v-if="invites.length > 0" class="invites-block-container">
+                    <div v-for="invite in invites" :key="invite.id" class="container-invites">
+                        <div class="repository invites-block">
+                            <div style="display: flex; justify-content: space-between;">
+                                <div class="repository-info">
+                                    <div class="repository-name" @click="goToRepository(invite.project)">{{
+                                        invite.project.owner_name
+                                        + '/' }}<span>{{ invite.project.name }}</span>
+                                    </div>
+                                    <div class="repository-access">{{ invite.project.access }}</div>
+                                </div>
+                                <div class="btn-container">
+                                    <button class="accept-btn" @click="acceptInvite(invite.id)">Принять</button>
+                                    <button class="reject-btn" @click="rejectInvite(invite.id)">Отклонить</button>
+                                </div>
+                            </div>
 
-                <div class="invites-block-name">
-                    Репозитории в которые вас пригласили
-                </div>
-                <div v-for="invite in invites" :key="invite.id">
-                    <div class="repository invites-block">
-                        <div style="display: flex; justify-content: space-between;">
-                            <div class="repository-info">
-                                <div class="repository-name" @click="goToRepository(invite.project)">{{
-                                    invite.project.owner_name
-                                    + '/' }}<span>{{ invite.project.name }}</span>
+                            <div class="extra-info">
+                                <div class="sender">
+                                    <div>
+                                        Отправитель: <span class="sender-only-info"
+                                            @click="$router.push(`/${invite.sender.name}`)">{{ invite.sender.name
+                                            }}</span>
+                                    </div>
+                                    <div>
+                                        Email: <span class="sender-only-info">{{ invite.sender.email }}</span>
+                                    </div>
                                 </div>
-                                <div class="repository-access">{{ invite.project.access }}</div>
-                            </div>
-                            <div class="btn-container">
-                                <button class="accept-btn" @click="acceptInvite(invite.id)">Принять</button>
-                                <button class="reject-btn" @click="rejectInvite(invite.id)">Отклонить</button>
-                            </div>
-                        </div>
-
-                        <div class="extra-info">
-                            <div class="sender">
-                                <div>
-                                    Отправитель: <span class="sender-only-info"
-                                        @click="$router.push(`/${invite.sender.name}`)">{{ invite.sender.name }}</span>
+                                <div class="date">
+                                    {{ formatDateTime(invite.updated_at) }}
                                 </div>
-                                <div>
-                                    Email: <span class="sender-only-info">{{ invite.sender.email }}</span>
-                                </div>
-                            </div>
-                            <div class="date">
-                                {{ formatDateTime(invite.updated_at) }}
                             </div>
                         </div>
                     </div>
                 </div>
+                <div v-else class="empty-message">
+                    У вашей команды нет приглашений
+                </div>
+
             </div>
-            <div v-else class="empty-message">
-                У вашей команды нет приглашений
+            <div v-if="inviteChapter == 'sent'">
+                <div v-if="sentInvites.length > 0" class="invites-block-container">
+                    <div v-for="invite in sentInvites" :key="invite.id" class="container-invites">
+                        <div class="repository invites-block">
+                            <div style="display: flex; justify-content: space-between;">
+                                <div class="repository-info">
+                                    <div class="container-img">
+                                        <img :src="invite.user.profile.avatar" alt="">
+                                    </div>
+                                    <div class="user-name" @click="$router.push(`/${invite.user.name}`)"><span>{{
+                                            invite.user.name }}</span>
+                                    </div>
+                                </div>
+                                <div class="btn-container">
+                                    <button class="reject-btn" @click="cancelInvite(invite.id)">Отменить
+                                        приглашение</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="empty-message">
+                    Вы ещё никого не пригласили в команду
+                </div>
+
             </div>
         </div>
     </div>
@@ -96,7 +128,6 @@
 
 import axios from 'axios';
 import Search from '../input/Search.vue';
-import router from '../../router';
 
 export default {
     name: 'TeamRepositories',
@@ -104,7 +135,9 @@ export default {
         return {
             searchQuery: '',
             accessFilter: null,
-            invites: []
+            invites: [],
+            sentInvites: [],
+            inviteChapter: 'received'
         }
     },
     props: {
@@ -117,6 +150,8 @@ export default {
             handler(newVal) {
                 if (newVal && newVal.team && newVal.team.id) {
                     this.fetchInvites(newVal.team.id);
+                    this.fetchSentInvites(newVal.team.id);
+
                 }
             },
             immediate: true
@@ -127,6 +162,12 @@ export default {
             axios.get(`/team/${this.teamInfo.team.id}/invite`)
                 .then(response => {
                     this.invites = response.data;
+                })
+        },
+        fetchSentInvites() {
+            axios.get(`/team/${this.teamInfo.team.id}/invited`)
+                .then(response => {
+                    this.sentInvites = response.data;
                 })
         },
         handleSearchInput(text) {
@@ -165,24 +206,30 @@ export default {
 
             return formatted;
         },
-        acceptInvite(inviteId)
-        {
+        acceptInvite(inviteId) {
             axios.post(`/invitations/${inviteId}/accept`)
-            .then(response=>{
-                this.deleteFromInvites(inviteId);
-            })
+                .then(response => {
+                    this.$emit('refresh');
+                    this.deleteFromInvites(inviteId);
+                })
 
         },
-        rejectInvite(inviteId)
-        {
+        rejectInvite(inviteId) {
             axios.post(`/invitations/${inviteId}/reject`)
-            .then(response=>{
-                this.deleteFromInvites(inviteId);
-            })
+                .then(response => {
+                    this.deleteFromInvites(inviteId);
+                })
         },
-        deleteFromInvites(id)
-        {
-            this.invites = this.invites.filter(i =>{
+        cancelInvite(inviteId) {
+            axios.delete(`/team/${inviteId}/invite`)
+                .then(response => {
+                    this.sentInvites = this.sentInvites.filter(i => {
+                        i.id != inviteId
+                    })
+                })
+        },
+        deleteFromInvites(id) {
+            this.invites = this.invites.filter(i => {
                 i.id != id
             })
         }
@@ -669,5 +716,62 @@ export default {
     font-size: 16px;
     color: #656c72;
     align-self: flex-end;
+}
+
+.btn-chapters-container {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-chapters-container button {
+    font-family: 'Montserrat';
+    box-sizing: border-box;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-weight: 500;
+    font-size: 16px;
+    background: none;
+    border-radius: 10px;
+    padding: 10px 15px;
+    border: none;
+    border: 1px solid #EDB20000;
+    color: #F8F9FA;
+    text-align: start;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-chapters-container button:hover {
+    background-color: #656A6F50;
+}
+
+.btn-chapters-container button.active {
+    background-color: #656A6F70;
+    border: 1px solid #EDB200;
+    box-shadow: none;
+}
+
+.container-invites {
+    margin-top: 25px;
+}
+
+.container-img {
+    width: 40px;
+    height: 40px;
+}
+
+.container-img img {
+    width: 100%;
+    height: 100%;
+}
+
+.user-name {
+    letter-spacing: 1px;
+    cursor: pointer;
+    color: #EDB200;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
 }
 </style>

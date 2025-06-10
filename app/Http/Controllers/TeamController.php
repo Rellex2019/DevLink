@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\UserInvited;
+use App\Models\InviteTeam;
 use App\Models\Team;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class TeamController extends Controller
@@ -45,6 +48,56 @@ class TeamController extends Controller
 
         return response()->json($data);
     }
+    public function invitedPeople(Request $request, $teamId)
+    {
+        $team = Team::find($teamId);
+        $user = $request->user();
+        $invites = $team->invitedPeople->load(['user.profile', 'team']);
+        return response()->json($invites);
+    }
+    public function sendInvite($teamId, $userId)
+    {
+        $team = Team::find($teamId);
+        $sender = auth()->user();
+        if (!$team) {
+            return response()->json([
+                'error' => 'Team not found',
+                'message' => 'Команда не была найдена',
+
+            ], 404);
+        }
+        $exists = InviteTeam::where('team_id', $teamId)
+            ->where('user_id', $userId)->exists()
+            || DB::table('team_user')->where('team_id', $teamId)
+            ->where('user_id', $userId)->exists();
+
+        if (!$exists) {
+            $inviteTeam = InviteTeam::create([
+                'user_id' => $userId,
+                'team_id' => $teamId,
+                'sender_id' => $sender->id,
+            ]);
+            broadcast(new UserInvited($inviteTeam));
+        }
+        return response()->json([
+            'message' => 'Приглашение отправлено',
+        ]);
+    }
+    public function deleteInviteUser(InviteTeam $invite)
+    {
+        $deleted = $invite->delete();
+
+        if ($deleted) {
+            return response()->json([
+                'message' => 'Приглашение для пользователя успешно удалено'
+            ]);
+        }
+
+        return response()->json([
+            'error' => 'Invitation not found',
+            'message' => 'Приглашение для указаннаго пользователя не найдено'
+        ], 404);
+    }
 
 
     public function invites($teamId)
@@ -78,8 +131,15 @@ class TeamController extends Controller
     }
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'logo' => 'nullable|string'
+        ]);
         $newTeam = Team::create([
-            ...$request->all(),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'logo' => $validated['logo'] ?? '/storage/logos/default-logo.jpg',
             'owner' => $request->user()->id
         ]);
         $newTeam->users()->attach($request->user()->id, [
@@ -96,9 +156,14 @@ class TeamController extends Controller
         ]);
 
         $team = Team::findOrFail($teamId);
-        $team->fill($validated);
+        $team->fill(
+            [
+                'name' => $validated['name'] ?? $team->name,
+                'email' => $validated['email'] ?? $team->email
+            ]
+        );
 
-        if ($request->hasFile('logo')) {
+        if ($request->hasFile('logo') && $request->logo != null) {
             $rawLogo = $team->getRawOriginal('logo');
             if ($team->logo) {
 
