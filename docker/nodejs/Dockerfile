@@ -11,17 +11,21 @@ RUN apt-get update && apt-get install -y \
 # Создаем рабочую директорию
 WORKDIR /var/www
 
-# Копируем package файлы
+# Копируем только package файлы (для кеширования слоев)
 COPY package.json package-lock.json ./
 
-# Устанавливаем зависимости
+# Устанавливаем зависимости от имени root
 RUN npm ci --no-audit --progress=false
 
-# Копируем остальные файлы
+# Копируем остальные файлы проекта
 COPY . .
 
-# Фиксим права (лучше только для node_modules)
+# Фиксим права для node_modules (без рекурсии для всего /var/www)
 RUN chown -R node:node /var/www/node_modules
+
+# Создаем необходимые директории Laravel
+RUN mkdir -p /var/www/storage/framework/{cache,sessions,views} \
+    && chown -R node:node /var/www/storage
 
 # Переключаемся на пользователя node
 USER node

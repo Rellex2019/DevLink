@@ -1,53 +1,46 @@
-version: '3'
-services:
+version: '3.8'
 
-  # Backend контейнер
+services:
   backend:
-    # Для установки нужных пакетов используем не чистый образ, а инструкции из конкретного файла Dockerfile
     build:
       context: .
       dockerfile: ./docker/backend/Dockerfile
+    image: devlink-backend  # Локальное имя образа
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
-    tty: true
     working_dir: /var/www
     volumes:
-      - .:/var/www # Монтируем локальную папку в контейнер как /var/www
+      - .:/var/www
       - ./docker/backend/php.ini:/usr/local/etc/php/php.ini
     environment:
       DB_CONNECTION: sqlite
       DB_DATABASE: /var/www/database/database.sqlite
 
-  # Nginx контейнер для вебсервера
   nginx:
-    # Используем готовый образ для nginx контейнера
-    image: nginx:alpine
+    image: nginx:alpine  # Используем официальный образ
     restart: unless-stopped
-    tty: true
     ports:
-      - "80:80" # Внутренний порт контейнера пробрасываем на host машину
+      - "80:80"
     volumes:
-      - .:/var/www # Монтируем локальную папку в контейнер как /var/www
-      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/ # Передаем в контейнер конфигурационные файлы nginx
+      - ./public:/var/www/public:ro
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
     depends_on:
       - backend
 
-
-  # Для сборки js
   node:
     build:
       context: .
       dockerfile: ./docker/nodejs/Dockerfile
+    image: devlink-node  # Локальное имя образа
     volumes:
       - .:/var/www
       - node_modules:/var/www/node_modules
-
     ports:
       - "5173:5173"
     environment:
       - NODE_ENV=development
+      - VITE_APP_BASE_URL=http://localhost
+
 volumes:
   node_modules:
-
-
