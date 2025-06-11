@@ -148,13 +148,16 @@ export default {
                     tasks: [],
                     color: status.color,
                     name: status.name,
-                    id: status.id
+                    id: status.id,
                 };
             });
 
-            this.tasks.forEach(task => {
+            this.tasks.forEach((task, index) => {
                 if (grouped[task.status]) {
-                    grouped[task.status].tasks.push(task);
+                    grouped[task.status].tasks.push({
+                        ...task,
+                        id_local: index + 1
+                    });
                 }
             });
 

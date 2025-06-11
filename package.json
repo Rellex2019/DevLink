@@ -28,5 +28,8 @@
         "js-cookie": "^3.0.5",
         "monaco-editor-webpack-plugin": "^7.1.0",
         "vuex": "^4.1.0"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-arm64-gnu": "^4.0.0"
     }
 }

@@ -1,14 +1,17 @@
 <template>
-    <header :style="subtitleItems ? { border: 'none' } : null">
+    <header :style="subtitleItems && subtitleItems.length ? { border: 'none' } : null">
         <div class="outer-padding">
             <div class="container-logo">
                 <img class="logo-svg" src="@/svg/logo.svg" alt="Логотип">
                 <p class="logo-name">Dev<span>Link</span></p>
             </div>
-            <div class="container-tools">
+            <div class="container-tools" >
                 <Search :animated='true' w=260 placeholderText="Найти друзей, репозитории" />
-
-                <div tabindex="0" @keydown="(e) => actionModal(e, 'isPlusVisible', '.plus-block')"
+                <div class="container-btns" v-if="!isAuthenticated">
+                    <button @click="$router.push({name:'login'})" class="login">Войти</button>
+                    <button @click="$router.push({name:'registration'})" class="singup">Зарегистрироваться</button>
+                </div>
+                <div v-if="isAuthenticated" tabindex="0" @keydown="(e) => actionModal(e, 'isPlusVisible', '.plus-block')"
                     @click="(e) => actionModal(e, 'isPlusVisible', '.plus-block')" class="plus-block style-block">
                     <svg width="16" class="plus-svg" height="16" viewBox="0 0 16 16" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
@@ -61,7 +64,7 @@
                     </Modal>
                 </div>
 
-                <button class="notification-block style-block"
+                <button v-if="isAuthenticated" class="notification-block style-block"
                     @keydown="(e) => actionModal(e, 'isNotificationVisible', '.notification-block')"
                     @click="(e) => actionModal(e, 'isNotificationVisible', '.notification-block')"
                     ref="notificationBlock">
@@ -90,7 +93,7 @@
                 </button>
 
 
-                <button @keydown="(e) => actionModal(e, 'isPersonVisible', '.person-block')"
+                <button v-if="isAuthenticated" @keydown="(e) => actionModal(e, 'isPersonVisible', '.person-block')"
                     @click="(e) => actionModal(e, 'isPersonVisible', '.person-block')" class="person-block"
                     ref="personBlock">
                     <div class="person-name">{{ user.name }}</div>
@@ -110,7 +113,7 @@
         </div>
 
     </header>
-    <div class="subtitle">
+    <div class="subtitle" v-if="isAuthenticated">
         <div class="subtitle-outer-padding">
             <Subtitle :pages="subtitleItems" />
         </div>
@@ -376,7 +379,7 @@ header {
 
 .logo-name {
     margin-left: 10px;
-    font-size: 36px;
+    font-size: 30px;
     font-family: 'Roboto';
 }
 
@@ -544,7 +547,7 @@ header {
 .person-photo {
     width: 50px;
     height: 50px;
-    object-fit: fill;
+    object-fit: cover;
     background: none;
 }
 
@@ -617,5 +620,30 @@ header {
 }
 .selection:hover{
     text-decoration: underline;
+}
+
+
+.container-btns{
+    margin-left: 50px;
+    display: flex;
+    gap: 15px;
+}
+.container-btns button{
+    cursor: pointer;
+    font-family: 'Montserrat';
+    padding: 6px 20px;
+    border-radius: 5px;
+    border: none;
+    background: none;
+}
+.login:hover{
+    color: #EDB200;
+}
+.singup{
+    border: 1px solid #F8F9FA !important;
+}
+.singup:hover{
+    background-color: #F8F9FA10;
+    color: #EDB200;
 }
 </style>

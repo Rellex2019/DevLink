@@ -600,8 +600,29 @@ export default {
 
 /* РЕПОЗИТОРИИ */
 .repository-block {
+    overflow: auto;
+    padding-right: 5px;
     height: 50%;
 }
+.repository-block::-webkit-scrollbar {
+    width: 7px;
+}
+
+.repository-block::-webkit-scrollbar-track {
+    background-color: #343A40;
+    border-radius: 10px;
+}
+
+.repository-block::-webkit-scrollbar-thumb {
+    background-color: #161718;
+    border-radius: 10px;
+}
+
+.repository-block::-webkit-scrollbar-thumb:hover {
+    background-color: #222325;
+}
+
+
 
 .container-repository {
     margin-top: 20px;

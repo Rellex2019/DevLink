@@ -18,7 +18,9 @@
                 <ElipsisPrevent :id="statusId" @delete="deleteStatus" @edit="editStatus" />
 
             </div>
-            <div class="ps">Задачи которые надо выполнить</div>
+            <div class="ps">
+                <!-- Задачи которые надо выполнить -->
+            </div>
         </div>
         <div class="container-tasks" ref="scrollContainer" :style="{ paddingRight: hasScroll ? '7px' : '0' }">
             <Task v-for="task in tasks" :task="task" />
@@ -165,7 +167,8 @@ export default {
 
 
 .ps {
-    margin-top: 5px;
+    /* margin-top: 5px; */
+    margin-top: 25px;
     font-size: 16px;
     font-family: 'Fira Code';
     color: #7B7B7B;

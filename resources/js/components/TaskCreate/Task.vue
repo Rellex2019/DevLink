@@ -1,7 +1,7 @@
 <template>
     <div class="container-task" draggable="true" @dragstart="onDragStart" @dragend="onDragEnd" :data-task-id="task.id">
         <div class="task-actions">
-            <div class="name-mission">Gang Crud # {{ task.id }}</div>
+            <div class="name-mission">Gang Crud # {{ task.id_local }}</div>
             <Elipsis :id="task.id" @edit = "openTask(task, true)"/>
         </div>
         <div @click="openTask(task)" class="task-name">

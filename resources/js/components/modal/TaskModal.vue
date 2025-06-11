@@ -36,8 +36,11 @@
                             <div class="user-name">Имя</div>
                             <div class="date">позавчера</div>
                         </div>
-                        <div class="text">
+                        <div class="text" v-if="task.description">
                             {{ task.description }}
+                        </div>
+                        <div v-else class="text" style="color: #7B7B7B">
+                            Нет описания для задания
                         </div>
                     </div>
                 </div>

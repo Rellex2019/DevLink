@@ -249,7 +249,7 @@ export default {
     },
     computed: {
         checkСonditions() {
-            const regex = /^[a-z0-9]+$/i;
+            const regex = /^[a-z0-9.]+$/i;
             if(this.nameInput.length > 3 && regex.test(this.nameInput)) return false
             else{ return true};
         },
