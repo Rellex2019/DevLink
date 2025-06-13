@@ -2,7 +2,22 @@ import _ from 'lodash';
 
 // Импортируем библиотеку axios
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
+axios.interceptors.request.use(config => {
+    let token = Cookies.get('XSRF-TOKEN') || document.querySelector('meta[name="csrf-token"]')?.content;
+    // Декодируем токен если он URL-encoded
+    if (token && token.includes('%3D')) {
+        token = decodeURIComponent(token);
+        console.log('Decoded token:', token);
+    }
+    if (token) {
+        config.headers['X-XSRF-TOKEN'] = token;
+    } else {
+        console.error('CSRF token not found');
+    }
+    return config;
+});
 window._ = _; // Присваиваем Lodash глобальной переменной
 
 axios.defaults.withCredentials = true;
@@ -12,6 +27,9 @@ axios.defaults.withXSRFToken = true;
 window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+
+
 
 // Настройка Laravel Echo (по желанию)
 // import Echo from 'laravel-echo';

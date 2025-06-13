@@ -1,53 +1,94 @@
-version: '3'
-services:
+version: '3.8'
 
-  # Backend контейнер
-  backend:
-    # Для установки нужных пакетов используем не чистый образ, а инструкции из конкретного файла Dockerfile
+services:
+  app:
+    user: "www-data"
     build:
       context: .
       dockerfile: ./docker/backend/Dockerfile
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    container_name: laravel_app
     restart: unless-stopped
-    tty: true
     working_dir: /var/www
     volumes:
-      - .:/var/www # Монтируем локальную папку в контейнер как /var/www
-      - ./docker/backend/php.ini:/usr/local/etc/php/php.ini
+      - ./:/var/www
+      - ./storage:/var/www/storage
+      - ./bootstrap/cache:/var/www/bootstrap/cache
+      - ./database/database.sqlite:/var/www/database/database.sqlite
     environment:
-      DB_CONNECTION: sqlite
-      DB_DATABASE: /var/www/database/database.sqlite
-
-  # Nginx контейнер для вебсервера
-  nginx:
-    # Используем готовый образ для nginx контейнера
-    image: nginx:alpine
-    restart: unless-stopped
-    tty: true
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/database/database.sqlite
+      - APP_STORAGE=/var/www/storage
     ports:
-      - "80:80" # Внутренний порт контейнера пробрасываем на host машину
-    volumes:
-      - .:/var/www # Монтируем локальную папку в контейнер как /var/www
-      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/ # Передаем в контейнер конфигурационные файлы nginx
-    depends_on:
+      - "8000:8000"
+    command: >
+      sh -c "mkdir -p storage/framework/{sessions,views,cache} storage/logs
+      && find storage bootstrap/cache -type f -name '.gitignore' -delete
+      && chown -R www-data:www-data storage bootstrap/cache
+      && chmod -R 775 storage bootstrap/cache
+      && php artisan migrate --force
+      && php artisan storage:link
+      && php-fpm"
+    networks:
       - backend
+    depends_on:
+      - reverb
 
-
-  # Для сборки js
   node:
+    image: node:20
+    privileged: true
+    container_name: node_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: >
+      sh -c "echo fs.inotify.max_user_watches=524288 >> /etc/sysctl.conf
+      && sysctl -p
+      && npm install
+      && npm run dev"
+    ports:
+      - "5173:5173" 
+      
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - backend
+    depends_on:
+      - app
+      - reverb
+  
+  reverb:
     build:
       context: .
-      dockerfile: ./docker/nodejs/Dockerfile
+      dockerfile: ./docker/backend/Dockerfile 
+    container_name: laravel_reverb
+    restart: unless-stopped
+    working_dir: /var/www
     volumes:
-      - .:/var/www
-      - node_modules:/var/www/node_modules
-
-    ports:
-      - "5173:5173"
+      - ./:/var/www
     environment:
-      - NODE_ENV=development
-volumes:
-  node_modules:
-
-
+      - APP_ENV=local
+      - BROADCAST_DRIVER=reverb
+      - REVERB_APP_ID=707813
+      - REVERB_APP_KEY=kthmg3yuzm809ipzncae
+      - REVERB_APP_SECRET=fzelmm9eg2mg9nrqowcp
+      - REVERB_SERVER_HOST=0.0.0.0
+      - REVERB_HOST=0.0.0.0
+    ports:
+      - "8080:8080"
+    command: >
+      sh -c "php artisan reverb:start & php artisan queue:work"
+    networks:
+      - backend
+networks:
+  backend:
+    driver: bridge

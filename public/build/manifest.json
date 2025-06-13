@@ -1,0 +1,112 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-CPRx-mF2.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/fonts/FiraCode-Regular.ttf": {
+    "file": "assets/FiraCode-Regular-DrZhWqJm.ttf",
+    "src": "resources/fonts/FiraCode-Regular.ttf"
+  },
+  "resources/fonts/Montserrat-Light.ttf": {
+    "file": "assets/Montserrat-Light-Cbfxly1I.ttf",
+    "src": "resources/fonts/Montserrat-Light.ttf"
+  },
+  "resources/fonts/Montserrat-Medium.ttf": {
+    "file": "assets/Montserrat-Medium-NQGxzFBw.ttf",
+    "src": "resources/fonts/Montserrat-Medium.ttf"
+  },
+  "resources/fonts/Montserrat-Regular.ttf": {
+    "file": "assets/Montserrat-Regular-Cw3fqWkz.ttf",
+    "src": "resources/fonts/Montserrat-Regular.ttf"
+  },
+  "resources/fonts/Montserrat-SemiBold.ttf": {
+    "file": "assets/Montserrat-SemiBold-YdOtxg4l.ttf",
+    "src": "resources/fonts/Montserrat-SemiBold.ttf"
+  },
+  "resources/fonts/Roboto-Regular.ttf": {
+    "file": "assets/Roboto-Regular-ia0dPpEo.ttf",
+    "src": "resources/fonts/Roboto-Regular.ttf"
+  },
+  "resources/images/Avatar.png": {
+    "file": "assets/Avatar-MKxi1qgm.png",
+    "src": "resources/images/Avatar.png"
+  },
+  "resources/images/svet.png": {
+    "file": "assets/svet-D892HVov.png",
+    "src": "resources/images/svet.png"
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-DvQgoRL_.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-oq53jXAN.css"
+    ],
+    "assets": [
+      "assets/loop-B-AFhHxc.svg",
+      "assets/logo-E41OwbxI.svg",
+      "assets/Avatar-MKxi1qgm.png",
+      "assets/arrow-folder-Cyl2_gAj.svg",
+      "assets/file-add-vsBN5Yha.svg",
+      "assets/folder-add-DrGx_Cxw.svg",
+      "assets/file-BVrbMLZd.svg",
+      "assets/alert-Bxeslj_T.svg",
+      "assets/logoLogin-CpgIOfTQ.svg",
+      "assets/default-avatar-GB5-d3fm.svg",
+      "assets/mark-DGjpuJF_.svg",
+      "assets/link-XVF3pa3h.svg",
+      "assets/email-BvtJza5S.svg",
+      "assets/svet-D892HVov.png"
+    ]
+  },
+  "resources/svg/alert.svg": {
+    "file": "assets/alert-Bxeslj_T.svg",
+    "src": "resources/svg/alert.svg"
+  },
+  "resources/svg/arrow-folder.svg": {
+    "file": "assets/arrow-folder-Cyl2_gAj.svg",
+    "src": "resources/svg/arrow-folder.svg"
+  },
+  "resources/svg/default-avatar.svg": {
+    "file": "assets/default-avatar-GB5-d3fm.svg",
+    "src": "resources/svg/default-avatar.svg"
+  },
+  "resources/svg/email.svg": {
+    "file": "assets/email-BvtJza5S.svg",
+    "src": "resources/svg/email.svg"
+  },
+  "resources/svg/file-add.svg": {
+    "file": "assets/file-add-vsBN5Yha.svg",
+    "src": "resources/svg/file-add.svg"
+  },
+  "resources/svg/file.svg": {
+    "file": "assets/file-BVrbMLZd.svg",
+    "src": "resources/svg/file.svg"
+  },
+  "resources/svg/folder-add.svg": {
+    "file": "assets/folder-add-DrGx_Cxw.svg",
+    "src": "resources/svg/folder-add.svg"
+  },
+  "resources/svg/link.svg": {
+    "file": "assets/link-XVF3pa3h.svg",
+    "src": "resources/svg/link.svg"
+  },
+  "resources/svg/logo.svg": {
+    "file": "assets/logo-E41OwbxI.svg",
+    "src": "resources/svg/logo.svg"
+  },
+  "resources/svg/logoLogin.svg": {
+    "file": "assets/logoLogin-CpgIOfTQ.svg",
+    "src": "resources/svg/logoLogin.svg"
+  },
+  "resources/svg/loop.svg": {
+    "file": "assets/loop-B-AFhHxc.svg",
+    "src": "resources/svg/loop.svg"
+  },
+  "resources/svg/mark.svg": {
+    "file": "assets/mark-DGjpuJF_.svg",
+    "src": "resources/svg/mark.svg"
+  }
+}

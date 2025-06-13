@@ -7,14 +7,17 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig({
     server: {
         host: '0.0.0.0', // Важно для работы в контейнере
-        port: 5173, 
+        port: 5173,
         strictPort: true,
         hmr: {
-            host: 'localhost', // Или ваш внешний IP
-            port: 5173, 
+            host: '87.228.101.27', // Или ваш внешний IP
+            port: 5173,
         },
         watch: {
-            usePolling: true, // Необходимо для работы в Docker на Windows
+            ignored: [
+                '**/vendor/**', 
+                '**/node_modules/**'
+            ]
         }
     },
     plugins: [
@@ -37,4 +40,7 @@ export default defineConfig({
             '@': '/resources',
         },
     },
+    optimizeDeps: {
+        include: ['js-cookie']
+    }
 });

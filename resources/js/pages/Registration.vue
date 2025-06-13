@@ -28,7 +28,7 @@
                 <form @submit.prevent="handleSubmit" class="form">
                     <div class="form-group">
                         <label>Email *</label>
-                        <input type="email" v-model="form.email"  required>
+                        <input type="email" v-model="form.email" required>
 
                         <!-- ВЫВОД ОШИБКИ -->
 
@@ -43,9 +43,11 @@
 
                     <div class="form-group">
                         <label>Ник пользователя *</label>
-                        <input type="text" v-model="form.name" @input="checkNick"  required>
-                        <span class="hint" v-if="!usernameError">Ник может содержать числа и буквы или одиночные дефисы.</span>
-                        <div class="error" v-if="usernameError"><img class="alert" src="@/svg/alert.svg" /> {{ usernameError }}</div>
+                        <input type="text" v-model="form.name" @input="checkNick" required>
+                        <span class="hint" v-if="!usernameError">Ник может содержать числа и буквы или одиночные
+                            дефисы.</span>
+                        <div class="error" v-if="usernameError"><img class="alert" src="@/svg/alert.svg" /> {{
+                            usernameError }}</div>
                     </div>
 
 
@@ -82,14 +84,16 @@ export default {
     },
     methods: {
         handleSubmit() {
-            if(!this.usernameError)
-        {
-            axios.post('/register', this.form)
-                .then(response => {
-                    this.$store.commit('authStore/setUser', response.data.user);
-                    this.$router.push('/dashboard');
-                })
-        }
+            if (!this.usernameError) {
+                axios.get('/sanctum/csrf-cookie').then(response => {
+                    axios.post('/register', this.form)
+                        .then(response => {
+                            this.$store.commit('authStore/setUser', response.data.user);
+                            this.$router.push('/dashboard');
+                        })
+                });
+
+            }
         },
         checkNick() {
             const regex = /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/;
@@ -106,8 +110,7 @@ export default {
     computed: {
         ...mapGetters('authStore', ['isAuthenticated', 'user']),
     },
-    mounted()
-    {
+    mounted() {
         if (this.isAuthenticated) {
             this.$router.push('/dashboard')
         }
@@ -265,10 +268,12 @@ export default {
 
     cursor: pointer;
 }
-.submit-btn:hover{
+
+.submit-btn:hover {
     background-color: #292b2d;
 }
-.submit-btn:active{
+
+.submit-btn:active {
     background-color: #101112;
 }
 
