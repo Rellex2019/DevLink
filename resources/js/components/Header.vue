@@ -5,13 +5,14 @@
                 <img class="logo-svg" src="@/svg/logo.svg" alt="Логотип">
                 <p class="logo-name">Dev<span>Link</span></p>
             </div>
-            <div class="container-tools" >
+            <div class="container-tools">
                 <Search :animated='true' w=260 placeholderText="Найти друзей, репозитории" />
                 <div class="container-btns" v-if="!isAuthenticated">
-                    <button @click="$router.push({name:'login'})" class="login">Войти</button>
-                    <button @click="$router.push({name:'registration'})" class="singup">Зарегистрироваться</button>
+                    <button @click="$router.push({ name: 'login' })" class="login">Войти</button>
+                    <button @click="$router.push({ name: 'registration' })" class="singup">Зарегистрироваться</button>
                 </div>
-                <div v-if="isAuthenticated" tabindex="0" @keydown="(e) => actionModal(e, 'isPlusVisible', '.plus-block')"
+                <div v-if="isAuthenticated" tabindex="0"
+                    @keydown="(e) => actionModal(e, 'isPlusVisible', '.plus-block')"
                     @click="(e) => actionModal(e, 'isPlusVisible', '.plus-block')" class="plus-block style-block">
                     <svg width="16" class="plus-svg" height="16" viewBox="0 0 16 16" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
@@ -74,19 +75,31 @@
                             d="M7.16234 19.9643C8.19899 21.3452 9.70685 21.3452 10.7435 19.9643M15.7932 17.1105C8.95499 17.1105 6.34703 17.1105 2.18847 17.1105C1.33193 17.1105 0.853811 16.0774 1.30531 15.3495C4.03101 10.9553 2.36006 7.4114 3.52923 4.6983C5.32747 0.525467 13.0709 0.532413 14.633 4.79925C15.6294 7.52072 14.0858 11.1014 16.6863 15.3389C17.1355 16.0709 16.652 17.1105 15.7932 17.1105Z"
                             stroke-width="2" stroke-linecap="round" />
                     </svg>
-                    <div v-if="notifyCount>0" class="notify-count">
-                        
+                    <div v-if="notifyCount > 0" class="notify-count">
+
                     </div>
                     <Modal :isVisible="isNotificationVisible" class="modal-notify">
                         <div class="option-notify" v-for="notify in notifications" :key="notify.id">
-                            <p v-if="notify.type === 'inviteTeam'" @click.self="$router.push(`/${notify.data.user.name}`)">
-                                Пользователь <span class="selection"  @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name }}</span>
-                                предлагает вам вступить в команду <span class="selection" @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name }}</span> 
+                            <p v-if="notify.type === 'inviteTeam'"
+                                @click.self="$router.push(`/${notify.data.user.name}`)">
+                                Пользователь <span class="selection"
+                                    @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name
+                                    }}</span>
+                                предлагает вам вступить в команду <span class="selection"
+                                    @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name
+                                    }}</span>
                             </p>
 
-                            <p v-if="notify.type === 'inviteProject'" @click.self="$router.push(`/team/${notify.data.team.name}?chapter=repository`)">
-                                Вашей команде <span class="selection" @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name }}</span> 
-                                пользователь <span class="selection"  @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name }}</span>  предлагает присоедениться к разработке репозитория <span class="selection" @click="$router.push(`/${notify.data.project.owner_name}/${notify.data.project.name}`)">{{ notify.data.project.name }}</span> 
+                            <p v-if="notify.type === 'inviteProject'"
+                                @click.self="$router.push(`/team/${notify.data.team.name}?chapter=repository`)">
+                                Вашей команде <span class="selection"
+                                    @click="$router.push(`/team/${notify.data.team.name}`)">{{ notify.data.team.name
+                                    }}</span>
+                                пользователь <span class="selection"
+                                    @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name
+                                    }}</span> предлагает присоедениться к разработке репозитория <span class="selection"
+                                    @click="$router.push(`/${notify.data.project.owner_name}/${notify.data.project.name}`)">{{
+                                    notify.data.project.name }}</span>
                             </p>
                         </div>
                     </Modal>
@@ -143,100 +156,7 @@ export default {
 
             subtitleItems: null,
             notifyCount: 0,
-            notifications: [
-                {
-                    type: 'inviteProject',
-                    data: {
-                        "id": 49,
-                        "project_id": 1,
-                        "team_id": 2,
-                        "sender_id": 1,
-                        "status": "pending",
-                        "created_at": "2025-06-02T12:20:38.000000Z",
-                        "updated_at": "2025-06-02T12:20:38.000000Z",
-                        "project": {
-                            "id": 1,
-                            "name": "asfdsgdh",
-                            "description": "asdasdadd",
-                            "owner_name": "kir",
-                            "access": "private",
-                            "created_at": "2025-05-25T15:10:47.000000Z",
-                            "updated_at": "2025-05-25T15:10:47.000000Z"
-                        },
-                        "sender": {
-                            "id": 1,
-                            "name": "kir",
-                            "email": "dd@d",
-                            "email_verified_at": null,
-                            "created_at": "2025-05-25T15:03:27.000000Z",
-                            "updated_at": "2025-05-25T15:03:27.000000Z"
-                        },
-                        "team": {
-                            "id": 2,
-                            "owner": 1,
-                            "name": "sfdsfs",
-                            "email": "dfsfs@gmail",
-                            "logo": "/storage/logos/RtQSzecVd6deMS95Kjzxslf3x7ezHyZdwozIjxLH.png",
-                            "created_at": "2025-05-29T17:18:17.000000Z",
-                            "updated_at": "2025-05-29T17:18:23.000000Z",
-                            "owner_info": {
-                                "id": 1,
-                                "name": "kir",
-                                "email": "dd@d",
-                                "email_verified_at": null,
-                                "created_at": "2025-05-25T15:03:27.000000Z",
-                                "updated_at": "2025-05-25T15:03:27.000000Z"
-                            }
-                        }
-                    }
-                },
-                {
-                    type: 'alert',
-                    data: {
-                        "id": 49,
-                        "project_id": 1,
-                        "team_id": 2,
-                        "sender_id": 1,
-                        "status": "pending",
-                        "created_at": "2025-06-02T12:20:38.000000Z",
-                        "updated_at": "2025-06-02T12:20:38.000000Z",
-                        "project": {
-                            "id": 1,
-                            "name": "asfdsgdh",
-                            "description": "asdasdadd",
-                            "owner_name": "kir",
-                            "access": "private",
-                            "created_at": "2025-05-25T15:10:47.000000Z",
-                            "updated_at": "2025-05-25T15:10:47.000000Z"
-                        },
-                        "sender": {
-                            "id": 1,
-                            "name": "kir",
-                            "email": "dd@d",
-                            "email_verified_at": null,
-                            "created_at": "2025-05-25T15:03:27.000000Z",
-                            "updated_at": "2025-05-25T15:03:27.000000Z"
-                        },
-                        "team": {
-                            "id": 2,
-                            "owner": 1,
-                            "name": "sfdsfs",
-                            "email": "dfsfs@gmail",
-                            "logo": "/storage/logos/RtQSzecVd6deMS95Kjzxslf3x7ezHyZdwozIjxLH.png",
-                            "created_at": "2025-05-29T17:18:17.000000Z",
-                            "updated_at": "2025-05-29T17:18:23.000000Z",
-                            "owner_info": {
-                                "id": 1,
-                                "name": "kir",
-                                "email": "dd@d",
-                                "email_verified_at": null,
-                                "created_at": "2025-05-25T15:03:27.000000Z",
-                                "updated_at": "2025-05-25T15:03:27.000000Z"
-                            }
-                        }
-                    }
-                }
-            ]
+            notifications: []
 
         };
     },
@@ -251,8 +171,7 @@ export default {
             else if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Tab') {
                 this[varible] = false;
             }
-            if(mainBlock === '.notification-block')
-            {
+            if (mainBlock === '.notification-block') {
                 this.notifyCount = 0;
             }
 
@@ -300,7 +219,7 @@ export default {
                     { name: 'Обзор команды', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
                 ];
             }
-            else{
+            else {
                 this.subtitleItems = [];
             }
         },
@@ -322,22 +241,25 @@ export default {
     mounted() {
         this.loadSubtitle();
         // Для владельца команды - уведомления о новых приглашениях
-        echo.private(`team.${this.user.id}`)
-            .listen('TeamInvited', (data) => {
-                console.log('New invitation in project:', data);
-                this.newNotification(data.invitation, 'inviteProject');
-            });
+        if (this.user) {
+            echo.private(`team.${this.user.id}`)
+                .listen('TeamInvited', (data) => {
+                    console.log('New invitation in project:', data);
+                    this.newNotification(data.invitation, 'inviteProject');
+                });
 
-        // Для отправителя - уведомления о принятии/отклонении
-        echo.private(`user.${this.user.id}`)
-            .listen('UserInvited', (data) => {
-                console.log('New invitation in team:', data);
-                this.newNotification(data.invite, 'inviteTeam');
-            })
-            .listen('.invitation.rejected', (data) => {
-                console.log('Invitation rejected:', data);
-                // this.showRejectNotification(data.invitation);
-            });
+            // Для отправителя - уведомления о принятии/отклонении
+            echo.private(`user.${this.user.id}`)
+                .listen('UserInvited', (data) => {
+                    console.log('New invitation in team:', data);
+                    this.newNotification(data.invite, 'inviteTeam');
+                })
+                .listen('.invitation.rejected', (data) => {
+                    console.log('Invitation rejected:', data);
+                    // this.showRejectNotification(data.invitation);
+                });
+        }
+
     },
     components: {
         Modal,
@@ -490,6 +412,7 @@ header {
     background: none;
     color: #656565;
 }
+
 .notification-block:hover {
     border-color: #EDB200;
 }
@@ -501,7 +424,8 @@ header {
 .notification-block:focus .bell-svg {
     color: #EDB200;
 }
-.notify-count{
+
+.notify-count {
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -557,6 +481,7 @@ header {
     top: 90px;
     width: fit-content;
 }
+
 .modal-notify {
     z-index: 1;
     right: 50px;
@@ -579,6 +504,7 @@ header {
     padding: 10px 10px;
     border-bottom: 1px solid #656A6F;
 }
+
 .option-notify {
     padding: 0px 20px;
     display: flex;
@@ -596,9 +522,11 @@ header {
     border-bottom: 1px solid #656A6F;
     word-break: keep-all;
 }
-.option-notify p:hover{
+
+.option-notify p:hover {
     background-color: #202123;
 }
+
 .subtitle {
     background-color: #101112;
 }
@@ -615,20 +543,23 @@ header {
     height: 100%;
     padding: 0px 50px;
 }
-.selection{
+
+.selection {
     color: #EDB200;
 }
-.selection:hover{
+
+.selection:hover {
     text-decoration: underline;
 }
 
 
-.container-btns{
+.container-btns {
     margin-left: 50px;
     display: flex;
     gap: 15px;
 }
-.container-btns button{
+
+.container-btns button {
     cursor: pointer;
     font-family: 'Montserrat';
     padding: 6px 20px;
@@ -636,13 +567,16 @@ header {
     border: none;
     background: none;
 }
-.login:hover{
+
+.login:hover {
     color: #EDB200;
 }
-.singup{
+
+.singup {
     border: 1px solid #F8F9FA !important;
 }
-.singup:hover{
+
+.singup:hover {
     background-color: #F8F9FA10;
     color: #EDB200;
 }

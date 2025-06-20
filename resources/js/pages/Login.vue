@@ -46,12 +46,6 @@ export default {
     computed: {
         ...mapGetters('authStore', ['isAuthenticated', 'user']),
     },
-    mounted()
-    {
-        if (this.isAuthenticated) {
-            this.$router.push('/dashboard')
-        }
-    }
 }
 </script>
 

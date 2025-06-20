@@ -21,7 +21,15 @@ const isAuthenticated = (to, from, next) => {
         next({ path: '/login' }); 
     }
 };
-
+const isNotAuthenticated = (to, from, next) => {
+    const authenticated = store.getters['authStore/isAuthenticated'];
+    const user = store.getters['authStore/user'];
+    if (!authenticated) {
+        next(); 
+    } else {
+        next({ path: `/${user.name}` }); 
+    }
+};
 const isAdmin = (to, from, next) => {
     const user = store.getters['authStore/user'];
     if (user && user.role_id == 1) {
@@ -37,17 +45,20 @@ const router = createRouter({
         {
             path: '/registration',
             name: 'registration',
-            component: Registration
+            component: Registration,
+            beforeEnter: isNotAuthenticated
         },
         {
             path: '/login',
             name: 'login',
-            component: Login
+            component: Login,
+            beforeEnter: isNotAuthenticated
         },
         {
             path: '/', 
             name: 'welcome',
-            component: Welcome
+            component: Welcome,
+            beforeEnter: isNotAuthenticated
         },
         {
             path: '/dashboard', 
