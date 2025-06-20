@@ -6,18 +6,20 @@ import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     server: {
-        host: '0.0.0.0', // Важно для работы в контейнере
+        host: '0.0.0.0',
         port: 5173,
         strictPort: true,
         hmr: {
-            host: '87.228.101.27', // Или ваш внешний IP
+            host: 'localhost',  // Для Docker используйте localhost
             port: 5173,
         },
         watch: {
             ignored: [
                 '**/vendor/**', 
                 '**/node_modules/**'
-            ]
+            ],
+            usePolling: true,  // Обязательно для Docker на Linux/Windows
+            interval: 1000,    // Проверять изменения каждую секунду
         }
     },
     plugins: [
