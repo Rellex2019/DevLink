@@ -25,7 +25,6 @@ services:
       && find storage bootstrap/cache -type f -name '.gitignore' -delete
       && chown -R www-data:www-data storage bootstrap/cache
       && chmod -R 775 storage bootstrap/cache
-      && php artisan migrate --force
       && php artisan storage:link
       && php-fpm"
     networks:
