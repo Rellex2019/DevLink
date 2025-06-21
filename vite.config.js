@@ -10,7 +10,7 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         hmr: {
-            host: 'localhost',  // Для Docker используйте localhost
+            host: '87.228.101.27',  // Для Docker используйте localhost
             port: 5173,
         },
         watch: {
