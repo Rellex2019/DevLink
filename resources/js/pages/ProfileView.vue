@@ -8,7 +8,7 @@
                 </div>
                 <div class="person-name">{{ profileInfo.name }}</div>
                 <div class="person-description" v-if="profileInfo.bio" v-html="profileInfo.bio"></div>
-                <button class="btn-edit-profile" @click="enableEdit">Редактировать профиль</button>
+                <button class="btn-edit-profile" v-if="isOwner" @click="enableEdit">Редактировать профиль</button>
                 <div class="contacts">
                     <div class="location" v-if="profileInfo.location">
                         <div class="svg"><img src="@/svg/mark.svg" alt=""></div>

@@ -12,6 +12,7 @@ const props = defineProps({
     type: String,
     default: 'plaintext' 
   },
+  isMember: Boolean, 
   id: Number
 });
 
@@ -51,30 +52,40 @@ onMounted(async () => {
       minimap: { enabled: true },
       fontSize: 18,
       automaticLayout: true,
-      tabSize: 4
+      tabSize: 4,
+      readOnly: !props.isMember 
     });
 
     currentId.value = props.id;
 
-    editor.onDidChangeModelContent(() => {
-      hasUnsavedChanges.value = true;
 
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
+    if (props.isMember) {
+      editor.onDidChangeModelContent(() => {
+        hasUnsavedChanges.value = true;
 
-      debounceTimer = setTimeout(() => {
-        saveContent(currentId.value);
-        hasUnsavedChanges.value = false;
-      }, DEBOUNCE_DELAY);
-    });
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+
+        debounceTimer = setTimeout(() => {
+          saveContent(currentId.value);
+          hasUnsavedChanges.value = false;
+        }, DEBOUNCE_DELAY);
+      });
+    }
   } catch (error) {
     console.error('Failed to initialize Monaco Editor:', error);
   }
 });
 
-function saveContent(id) {
+watch(() => props.isMember, (newValue) => {
   if (editor) {
+    editor.updateOptions({ readOnly: !newValue });
+  }
+});
+
+function saveContent(id) {
+  if (editor && props.isMember) { 
     const value = editor.getValue();
     emit('update-content', value, id);
     if (debounceTimer) {
@@ -98,7 +109,7 @@ watch(() => props.language, (newLang) => {
 });
 
 watch(() => props.id, (newId, oldId) => {
-  if (oldId && editor && hasUnsavedChanges.value) {
+  if (oldId && editor && hasUnsavedChanges.value && props.isMember) { 
     saveContent(oldId);
     hasUnsavedChanges.value = false;
   }
@@ -298,5 +309,10 @@ function getMonacoLanguage(extension) {
 .code-editor {
   width: 100%;
   height: 100%;
+}
+
+.code-editor.readonly {
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 </style>

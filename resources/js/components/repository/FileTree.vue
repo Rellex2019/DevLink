@@ -1,7 +1,7 @@
 <template>
     <div class="file-tree">
         <div v-for="(item, index) in fileTreeLocal">
-            <button class="item" @contextmenu.prevent.stop="showContextMenu($event, item)" draggable="true"
+            <button class="item" @contextmenu.prevent.stop="showContextMenu($event, item)" :draggable="isMember?true :false"
                 @dragstart="handleDragStart($event, item)" @dragover="handleDragOver($event, item)"
                 @dragleave="handleDragLeave($event)" @drop="handleDrop($event, item)" @dragend="handleDragEnd($event)">
 
@@ -92,6 +92,9 @@ export default {
             required: false
         },
         usedElement: {
+            required: false
+        },
+        isMember: {
             required: false
         },
         nameElement: {

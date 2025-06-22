@@ -1,7 +1,7 @@
 <template>
     <header :style="subtitleItems && subtitleItems.length ? { border: 'none' } : null">
         <div class="outer-padding">
-            <div class="container-logo">
+            <div class="container-logo" @click="$router.push('/')">
                 <img class="logo-svg" src="@/svg/logo.svg" alt="Логотип">
                 <p class="logo-name">Dev<span>Link</span></p>
             </div>
@@ -308,6 +308,7 @@ header {
 }
 
 .container-logo {
+    cursor: pointer;
     display: flex;
     align-items: center;
 }

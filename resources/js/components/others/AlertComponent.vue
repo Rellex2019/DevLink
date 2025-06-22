@@ -48,17 +48,24 @@ export default {
     min-height: 50px;
     padding: 5px 15px;
     border-radius: 10px;
+    max-width: 350px;
 }
 
 .error {
+    border: 1px solid #EDB200;
     background-color: #FFB3B3;
+    color: #FF0E0E;
 }
 
 .accept {
-    background-color: #B3FFB3;
+    background-color: #343A40;
+    color: #EDB200;
+    border: 1px solid #EDB200;
 }
 .alert{
-    background-color: #5498e0;
+    background-color: #343A40;
+    color: #EDB200;
+    border: 1px solid #101112;
 }
 
 .fade-alert-enter-from, .fade-alert-leave-to {

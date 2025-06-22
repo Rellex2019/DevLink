@@ -18,7 +18,7 @@
                         </div>
                         <div class="repository-action">
                             <div class="repository-name">{{ route.params.repositoryName }}</div>
-                            <div class="container-svg">
+                            <div class="container-svg" v-if="isMember">
                                 <button class="btn-add" @click="addObjectArea('file')"><img class="file-add-svg"
                                         src="@/svg/file-add.svg" alt="Добавить файл"></button>
                                 <button class="btn-add" @click="addObjectArea('folder')"><img class="folder-add-svg"
@@ -27,7 +27,7 @@
                         </div>
                         <div class="repository-files" @click.self="choicedFolder = null"
                             :class="{ 'selected': choicedFolder == null }">
-                            <file-tree @main-folder="changeChoicedFolder" @choice-folder="changeChoicedFolder"
+                            <file-tree :isMember = "isMember"  @main-folder="changeChoicedFolder" @choice-folder="changeChoicedFolder"
                                 @choice-file="openFile" @store-object="saveObject" @remove-file="removeFile"
                                 :choicedFile="selectedFile" :choicedFolder="choicedFolder" :fileTree="fileTree"
                                 @choice-element="changeUsedElement" :usedElement="usedElement"
@@ -45,7 +45,7 @@
 
                 <div class="container-inner-file">
                     <div class="inner-file">
-                        <Content @update-content="contentFileUpdate" :id="selectedFile" :content="contentFile"
+                        <Content @update-content="contentFileUpdate" :isMember = "isMember" :id="selectedFile" :content="contentFile"
                             :language="fileExtension" />
                     </div>
                 </div>
@@ -54,7 +54,7 @@
 
 
 
-            <div class="container-team-block" :class="{ 'visible': showTeamBlock }">
+            <div style="display: none;" class="container-team-block" :class="{ 'visible': showTeamBlock }">
                 <div class="toggle-team-block-btn" @click="showTeamBlock = !showTeamBlock">
                     {{ showTeamBlock ? '►' : '◄' }}
                 </div>
@@ -67,7 +67,7 @@
             </div>
 
         </div>
-        <Modal :style="{ left: `${mouseX}px`, top: `${mouseY}px` }" :isVisible="showMenu">
+        <Modal :style="{ left: `${mouseX}px`, top: `${mouseY}px` }" :isVisible="showMenu && isMember">
             <div class="container-options" ref="containerOptions">
                 <div class="option" @click="openInputName">Переименовать</div>
                 <div class="option last" @click="removeFile()">Удалить</div>
@@ -92,6 +92,11 @@ const projectId = ref(null);
 const files = ref([]);
 const inActiveBar = ref([]);
 const searchQuery = ref('');
+
+
+const isOwner = ref(false);
+const isMember = ref(false);
+
 
 const scrollBlock = ref(null);
 const selectedFile = ref(null);
@@ -137,6 +142,8 @@ function fetchFiles() {
             files.value = response.data.files;
             projectId.value = response.data.project_id;
             fileTree.value = buildFileTree(files.value);
+            isMember.value = response.data.isMember;
+            isOwner.value = response.data.isOwner;
         })
 }
 
@@ -354,11 +361,13 @@ function contentFileShow(content, id) {
     selectedFile.value = id;
 }
 async function contentFileUpdate(content, id) {
+    if (isMember.value) {
+        await axios.put(`/project/${projectId.value}/file/update/${id}`, { 'content': content })
+            .then(response => {
+                updatedContent.value[id] = content;
+            })
+    }
 
-    await axios.put(`/project/${projectId.value}/file/update/${id}`, { 'content': content })
-        .then(response => {
-            updatedContent.value[id] = content;
-        })
 }
 //............................................
 

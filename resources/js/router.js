@@ -14,6 +14,9 @@ import TeamView from './pages/TeamView.vue';
 import RepositorySettings from './components/repository/RepositorySettings.vue';
 import SearchPage from './pages/SearchPage.vue';
 import PrivacyPage from './pages/PrivacyPage.vue';
+import ConditionPage from './pages/ConditionPage.vue';
+import ContactsPage from './pages/ContactsPage.vue';
+import DocumentsPage from './pages/DocumentsPage.vue';
 
 const isAuthenticated = (to, from, next) => {
     const authenticated = store.getters['authStore/isAuthenticated'];
@@ -51,7 +54,7 @@ const router = createRouter({
         {
             path: '/condition',
             name: 'condition',
-            component: PrivacyPage
+            component: ConditionPage
         },
         {
             path: '/privacy',
@@ -61,12 +64,12 @@ const router = createRouter({
         {
             path: '/documents',
             name: 'documents',
-            component: PrivacyPage
+            component: DocumentsPage
         },
         {
             path: '/contacts',
             name: 'contacts',
-            component: PrivacyPage
+            component: ContactsPage
         },
         {
             path: '/search',
