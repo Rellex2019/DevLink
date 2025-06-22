@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\InviteTeam;
 use App\Models\Link;
+use App\Models\Project;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +50,7 @@ class UserController extends Controller
             return response()->json([]);
         }
         $users = User::where('name', 'like', '%' . $query . '%')
-            ->where('id', '!=' ,$request->user()->id)
+            ->where('id', '!=', $request->user()->id)
             ->limit(10)
             ->get()
             ->load(['profile'])
@@ -188,5 +190,34 @@ class UserController extends Controller
         foreach ($unusedLinks as $link) {
             $link->delete();
         }
+    }
+    public function searchAll(Request $request)
+    {
+        $query = $request->input('query');
+
+        if (empty($query)) {
+            return response()->json([]);
+        }
+        $users = User::where('name', 'like', '%' . $query . '%')
+            ->where('id', '!=', $request->user()->id)
+            ->get()
+            ->load(['profile'])
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->profile->avatar,
+                ];
+            });
+        $repositories = Project::where('name', 'like', '%' . $query . '%')
+            ->where('access', 'public')
+            ->get();
+        $teams = Team::where('name', 'like', '%' . $query . '%')
+            ->get();
+        return response()->json([
+            'users' => $users,
+            'repositories' => $repositories,
+            'teams' => $teams
+        ]);
     }
 }

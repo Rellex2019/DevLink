@@ -12,36 +12,67 @@ import TasksView from './pages/TasksView.vue';
 import RepositoryTasks from './components/repository/RepositoryTasks.vue';
 import TeamView from './pages/TeamView.vue';
 import RepositorySettings from './components/repository/RepositorySettings.vue';
+import SearchPage from './pages/SearchPage.vue';
+import PrivacyPage from './pages/PrivacyPage.vue';
 
 const isAuthenticated = (to, from, next) => {
     const authenticated = store.getters['authStore/isAuthenticated'];
     if (authenticated) {
-        next(); 
+        next();
     } else {
-        next({ path: '/login' }); 
+        next({ path: '/login' });
     }
+};
+const BreakWay = (to, from, next) => {
+    const user = store.getters['authStore/user'];
+    next({name: 'profile', params:{'user': user.name}});
 };
 const isNotAuthenticated = (to, from, next) => {
     const authenticated = store.getters['authStore/isAuthenticated'];
     const user = store.getters['authStore/user'];
     if (!authenticated) {
-        next(); 
+        next();
     } else {
-        next({ path: `/${user.name}` }); 
+        next({ path: `/${user.name}` });
     }
 };
 const isAdmin = (to, from, next) => {
     const user = store.getters['authStore/user'];
     if (user && user.role_id == 1) {
-        next(); 
+        next();
     } else {
-        next({ path: '/' }); 
+        next({ path: '/' });
     }
 };
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
+        {
+            path: '/condition',
+            name: 'condition',
+            component: PrivacyPage
+        },
+        {
+            path: '/privacy',
+            name: 'privacy',
+            component: PrivacyPage
+        },
+        {
+            path: '/documents',
+            name: 'documents',
+            component: PrivacyPage
+        },
+        {
+            path: '/contacts',
+            name: 'contacts',
+            component: PrivacyPage
+        },
+        {
+            path: '/search',
+            name: 'search',
+            component: SearchPage
+        },
         {
             path: '/registration',
             name: 'registration',
@@ -55,16 +86,16 @@ const router = createRouter({
             beforeEnter: isNotAuthenticated
         },
         {
-            path: '/', 
+            path: '/',
             name: 'welcome',
             component: Welcome,
             beforeEnter: isNotAuthenticated
         },
         {
-            path: '/dashboard', 
+            path: '/dashboard',
             name: 'dashboard',
             component: Dashboard,
-            beforeEnter: isAuthenticated
+            beforeEnter: BreakWay
         },
         {
             path: '/repository/create',
@@ -85,7 +116,7 @@ const router = createRouter({
             beforeEnter: isAuthenticated
         },
         {
-            path: '/:user', 
+            path: '/:user',
             name: 'profile',
             component: Profile,
             beforeEnter: isAuthenticated

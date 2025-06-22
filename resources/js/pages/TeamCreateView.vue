@@ -10,16 +10,22 @@
                         <div class="container-textarea">
                             <div class="name-input">Названия организации *</div>
                             <div class="container-path">
-                                <input type="text" class="input" name="name" v-model="formDataCreate.name" required
-                                    id="">
+                                <input type="text" @input="checkName" class="input" name="name"
+                                    v-model="formDataCreate.name" required id="">
                             </div>
+                            <span class="hint" v-if="!errors.name">Название команды может содержать числа и латинские
+                                буквы.</span>
+                            <div class="error" v-if="errors.name"><img class="alert" src="@/svg/alert.svg" /> {{
+                                errors.name }}</div>
                         </div>
                         <div class="container-textarea">
                             <div class="name-input">Контактный адрес электронной почты *</div>
                             <div class="container-path">
-                                <input type="email" class="input" name="email" v-model="formDataCreate.email" required
+                                <input type="email" class="input" name="email" @input="errors.email = ''" v-model="formDataCreate.email" required
                                     id="">
                             </div>
+                            <div class="error" v-if="errors.email"><img class="alert" src="@/svg/alert.svg" /> {{
+                                errors.email }}</div>
                         </div>
                         <div class="container-checkbox">
                             <div class="custom-checkbox">
@@ -42,9 +48,9 @@
                         <div class="name-block">Добро пожаловать <br>в {{ teamInfo.name }}</div>
                         <div class="container-textarea2">
                             <div class="name-input">Выберите аватар (необязательно)</div>
-                            <div class="container-path2 " @click="triggerFileInput">
+                            <div class="container-path2 " >
 
-                                <div class="container-team-avatar">
+                                <div class="container-team-avatar" @click="triggerFileInput">
                                     <img v-if="avatarPreview" :src="avatarPreview" alt="Аватар команды"
                                         class="avatar-preview">
                                     <div v-else class="avatar-placeholder">
@@ -58,8 +64,39 @@
                         <div class="container-textarea2">
                             <div class="name-input">Добавить членов команды</div>
                             <div class="container-path2">
-                                <input type="search" class="input" name="email" id="">
+                                <input type="search" class="input" name="email" v-model="inviteUserName"
+                                    @input="searchPeople" @focus="inputInFocus = true">
                             </div>
+
+                            <div v-if="users && users.length > 0" class="container-added-teams">
+                                <div class="container-teams">
+                                    <div class="team-added" v-for="user in users" @click="deleteUser(user)"
+                                        :key="user.id">
+
+                                        <img :src="user.avatar" class="team-avatar" alt="team avatar">
+                                        <span class="team-name-add">{{ user.name }}</span>
+
+                                    </div>
+                                </div>
+                                <button @click="handleSendInvites" ref="sendInviteBtn"
+                                    :disabled="users.length > 0 ? false : true">Отправить приглашение</button>
+                            </div>
+
+                            <div v-if="filteredPeople && filteredPeople.length && inputInFocus"
+                                class="user-list-container">
+                                <div class="user-list">
+                                    <div class="user" @click="handleSelectPeople(user)" v-for="user in filteredPeople"
+                                        :key="user.id">
+                                        <div class="img-cont">
+                                            <img :src="user.avatar" alt="">
+                                        </div>
+                                        <div class="name">{{ user.name }}</div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+
                         </div>
                         <button class="btn-back" @click="completeTeamCreate">Завершить настройку</button>
                     </div>
@@ -93,20 +130,85 @@ export default {
                 email: '',
             },
             teamInfo: null,
+
+            users: [],
+            inviteUserName: '',
+            inputInFocus: false,
+            filteredPeople: [],
+
+
+            errors: {
+                name: '',
+                email: '',
+            }
         }
     },
     computed: {
         ...mapGetters('authStore', ['user']),
     },
     methods: {
+        async searchPeople() {
+            if (this.inviteUserName.length > 1) {
+                try {
+                    const response = await axios.get('/user/search', {
+                        params: { query: this.inviteUserName }
+                    });
+                    this.filteredPeople = response.data.filter(user => {
+                        return !this.users.some(addedUser => addedUser.id === user.id);
+                    });
+                } catch (error) {
+                    console.error('Ошибка при поиске человека:', error);
+                }
+            } else {
+                this.filteredPeople = [];
+            }
+
+        },
+        handleSelectPeople(user) {
+            this.users.push(user);
+            this.inviteUserName = '';
+            this.inputInFocus = false;
+            this.filteredPeople = [];
+        },
+        handleSendInvites() {
+            if (this.users && this.users.length > 0) {
+                this.users.map(user => {
+                    axios.post(`/team/${this.teamInfo.id}/invite/${user.id}`)
+                })
+                this.$showAlert('Приглашения успешно отправлены', 'accept');
+                this.users = null;
+            }
+
+        },
         async submitForm() {
-            console.log('Форма отправлена:', this.formDataCreate);
             await axios.post('/team/create', this.formDataCreate)
                 .then(response => {
                     this.teamInfo = response.data;
                     this.currentStep++;
                 })
+                .catch(e => {
+                    if (e.response && e.response.data.errors.email) {
+                        this.errors.email = 'Email занят'
+                    }
+                    if (e.response && e.response.data.errors.name) {
+                        this.errors.name = 'Имя уже занято';
+                    }
+                })
 
+        },
+        deleteUser(UserToDelete) {
+            this.users = this.users.filter(user => user.id !== UserToDelete.id);
+        },
+        checkName() {
+            const regex = /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/;
+
+            if (!this.formDataCreate.name) {
+                this.errors.name = 'Поле не может быть пустым';
+            } else if (!regex.test(this.formDataCreate.name)) {
+                this.errors.name = 'Допустимы только латинские буквы и цифры';
+            } else {
+                this.errors.name = '';
+            }
         },
         async completeTeamCreate() {
             const formData = new FormData();
@@ -411,5 +513,157 @@ export default {
     color: #edb200ce;
     background: none;
     font-size: 14px;
+}
+
+
+
+.user-list-container {
+    margin-top: 5px;
+    align-items: flex-end;
+    width: 100%;
+    height: 50px;
+}
+
+.user-list {
+    flex-direction: row;
+    width: 50%;
+    background-color: #101112;
+    border: 1px solid #343A40;
+    border-radius: 5px;
+}
+
+.user {
+    cursor: pointer;
+    padding: 7px 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.user:hover {
+    background-color: #343A40;
+}
+
+.img-cont {
+    flex: none;
+    width: 30px;
+    height: 30px;
+}
+
+.img-cont img {
+    width: 100%;
+    height: 100%;
+}
+
+.name {
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.invite-btn {
+    cursor: pointer;
+    padding: 10px 20px;
+    background-color: #EDB20040;
+    color: #ddd;
+    border: none;
+    border: 1px solid #EDB20090;
+}
+
+
+.container-added-teams {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.team-add button {
+    padding: 10px 15px;
+    color: white;
+    background: none;
+    border: none;
+    border: 1px solid #EDB200;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.team-add button:hover {
+    background-color: #EDB20030;
+}
+
+.team-add button:active {
+    background-color: #EDB20010;
+}
+
+.container-teams {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 100%;
+    gap: 15px;
+}
+
+.team-added {
+    display: flex;
+    align-items: center;
+    background-color: #252829;
+    height: 30px;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.title-teams {
+    text-align: center;
+    font-size: 18px;
+}
+
+.team-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    margin-right: 10px;
+    object-fit: cover;
+    background-color: #161718;
+    box-shadow: 0 0px 6px rgba(183, 183, 183, 0.1);
+}
+
+.container-added-teams button {
+    padding: 10px 15px;
+    color: white;
+    background: none;
+    border: none;
+    border: 1px solid #EDB200;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.container-added-teams button:hover {
+    background-color: #EDB20030;
+}
+
+.container-added-teams button:active {
+    background-color: #EDB20010;
+}
+
+
+
+.hint {
+    font-weight: 100;
+    font-size: 0.83vw;
+    color: #586069;
+    display: block;
+    margin-top: 0.26vw;
+}
+
+.error {
+    gap: 0.6vw;
+    display: flex;
+    align-items: center;
+    font-weight: 100;
+    font-size: 0.83vw;
+    color: #FF0E0E;
+    margin-top: 0.26vw;
 }
 </style>

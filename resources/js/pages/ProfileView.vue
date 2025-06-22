@@ -118,7 +118,11 @@
 
             </div>
         </div>
+        <footer>
+        <Footer/>
+    </footer>
     </div>
+
 </template>
 <script>
 import axios from 'axios';
@@ -126,6 +130,7 @@ import Search from '../components/input/Search.vue';
 import { mapGetters } from 'vuex/dist/vuex.cjs.js';
 import store from '../store';
 import echo from '../echo';
+import Footer from '../components/Footer.vue';
 
 export default {
     name: 'ProfileView',
@@ -155,9 +160,14 @@ export default {
         }
     },
     watch: {
-        '$route'(to, from) {
-            this.fetchUserInfo();
+        '$route': {
+            handler
+                (to, from) {
+                this.fetchUserInfo();
+            },
+            immediate: true
         }
+
     },
     methods: {
         async fetchUserInfo() {
@@ -309,9 +319,6 @@ export default {
         }
     },
     mounted() {
-        this.fetchUserInfo();
-
-
 
         echo.private(`user.${this.user.id}`)
             .listen('UserInvited', (data) => {
@@ -335,7 +342,8 @@ export default {
         }
     },
     components: {
-        Search
+        Search,
+        Footer
     }
 
 }
@@ -348,12 +356,13 @@ export default {
 }
 
 .container-profile {
+    flex: 1;
     background-color: #101112;
     display: flex;
     align-items: center;
     width: 100vw;
     flex-direction: column;
-    height: 100%;
+    /* min-height: 100%; */
     font-family: 'Montserrat';
     font-size: 20px;
 }
@@ -600,38 +609,39 @@ export default {
 
 /* РЕПОЗИТОРИИ */
 .repository-block {
-    overflow: auto;
     padding-right: 5px;
     height: 50%;
 }
-.repository-block::-webkit-scrollbar {
-    width: 7px;
-}
 
-.repository-block::-webkit-scrollbar-track {
-    background-color: #343A40;
-    border-radius: 10px;
-}
 
-.repository-block::-webkit-scrollbar-thumb {
-    background-color: #161718;
-    border-radius: 10px;
-}
-
-.repository-block::-webkit-scrollbar-thumb:hover {
-    background-color: #222325;
-}
 
 
 
 .container-repository {
     margin-top: 20px;
     display: flex;
+    height: 80%;
     flex-direction: column;
     overflow-y: auto;
     gap: 15px;
 }
+.container-repository::-webkit-scrollbar {
+    width: 7px;
+}
 
+.container-repository::-webkit-scrollbar-track {
+    background-color: #343A40;
+    border-radius: 10px;
+}
+
+.container-repository::-webkit-scrollbar-thumb {
+    background-color: #161718;
+    border-radius: 10px;
+}
+
+.container-repository::-webkit-scrollbar-thumb:hover {
+    background-color: #222325;
+}
 .repository {
     border-radius: 5px;
     border: 1px solid #343A40;
@@ -757,5 +767,10 @@ export default {
 .reject-btn:hover {
     color: #FF0E0E;
     border-color: #FF0E0E;
+}
+
+footer{
+    width: 100%;
+    padding: 30px 0px;
 }
 </style>

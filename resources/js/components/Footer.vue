@@ -1,10 +1,10 @@
 <template>
     <div class="container-short-footer">
         <div class="short-footer">
-            <RouterLink to="/condition" class="option">Условия</RouterLink>
-            <RouterLink to="/privacy" class="option">Конфиденциальность</RouterLink>
-            <RouterLink to="/documents" class="option">Документы</RouterLink>
-            <RouterLink to="/contact" class="option">Контакты</RouterLink>
+            <RouterLink :to="{name: 'condition'}" class="option">Условия</RouterLink>
+            <RouterLink :to="{name: 'privacy'}" class="option">Конфиденциальность</RouterLink>
+            <RouterLink :to="{name: 'documents'}" class="option">Документы</RouterLink>
+            <RouterLink :to="{name: 'contacts'}" class="option">Контакты</RouterLink>
         </div>
     </div>
 </template>

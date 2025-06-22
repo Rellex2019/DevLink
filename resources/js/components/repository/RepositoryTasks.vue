@@ -37,11 +37,11 @@
 
                                 <div class="team-name" @click="goToTask(team.name)">{{ team.name }}</div>
                             </div>
-                            <div class="last-update">#5 обновлен вчера</div>
+                            <div class="last-update"> Обновлено {{ formatDateTime(team.updated_at)  }}</div>
                         </div>
                         <div class="delete-team-container">
-                            <svg class="delete-team" width="13" height="13" viewBox="0 0 13 13" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
+                            <svg @click="deleteTeamFromRep(team)" class="delete-team" width="13" height="13"
+                                viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path class="delete-team" d="M1 1L6.5 6.5M12 12L6.5 6.5M6.5 6.5L1 12M6.5 6.5L12 1"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                             </svg>
@@ -125,6 +125,25 @@ export default {
 
                 })
         },
+        formatDateTime(isoString) {
+            const date = new Date(isoString);
+
+            if (isNaN(date.getTime())) {
+                return "Неверная дата";
+            }
+
+            const options = {
+                day: 'numeric',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+            };
+
+            let formatted = date.toLocaleString('ru-RU', options);
+            formatted = formatted.replace(',', ' в');
+
+            return formatted;
+        },
         sendInvite() {
             const teamIds = [];
             if (this.inviteTeamList.length) {
@@ -185,10 +204,20 @@ export default {
                 .then(response => {
                     this.inviteTeamList = this.inviteTeamList.filter(team => team.id !== teamToDelete.id);
                 })
-                .catch(e=>{
+                .catch(e => {
                     this.inviteTeamList = this.inviteTeamList.filter(team => team.id !== teamToDelete.id);
                 })
-
+        },
+        deleteTeamFromRep(team) {
+            const confirm = window.confirm(`Вы уверены что хотите отозвать права для команды ${team.name}? `);
+            if (confirm) {
+                axios.delete(`/project/${this.$route.params.repositoryName}/team/delete/${team.id}/name`)
+                    .then(response => {
+                        this.teams = this.teams.filter(t => {
+                            return t.id != team.id
+                        })
+                    })
+            }
         },
         handleClickOutside(e) {
             if (!this.$el.contains(e.target)) {

@@ -28,26 +28,29 @@
                 <form @submit.prevent="handleSubmit" class="form">
                     <div class="form-group">
                         <label>Email *</label>
-                        <input type="email" v-model="form.email" required>
+                        <input type="email" v-model="form.email" @input="errors.email = ''" required>
 
                         <!-- ВЫВОД ОШИБКИ -->
-
+                        <div class="error" v-if="errors.email"><img class="alert" src="@/svg/alert.svg" /> {{
+                            errors.email }}</div>
 
                     </div>
 
                     <div class="form-group">
                         <label>Пароль *</label>
-                        <input type="password" v-model="form.password" required minlength="8">
-                        <span class="hint">Пароль должен содержать 8 символов включая числа и буквы.</span>
+                        <input type="password" v-model="form.password" @input="checkPassword" required minlength="8">
+                        <span class="hint" v-if="!errors.password">Пароль должен содержать 8 символов включая числа и
+                            буквы.</span>
+                        <div class="error" v-if="errors.password"><img class="alert" src="@/svg/alert.svg" /> {{
+                            errors.password }}</div>
                     </div>
 
                     <div class="form-group">
                         <label>Ник пользователя *</label>
                         <input type="text" v-model="form.name" @input="checkNick" required>
-                        <span class="hint" v-if="!usernameError">Ник может содержать числа и буквы или одиночные
-                            дефисы.</span>
-                        <div class="error" v-if="usernameError"><img class="alert" src="@/svg/alert.svg" /> {{
-                            usernameError }}</div>
+                        <span class="hint" v-if="!errors.username">Ник может содержать числа и латинские буквы.</span>
+                        <div class="error" v-if="errors.username"><img class="alert" src="@/svg/alert.svg" /> {{
+                            errors.username }}</div>
                     </div>
 
 
@@ -79,31 +82,55 @@ export default {
                 password: '',
                 name: ''
             },
-            usernameError: ''
+            errors: {
+                username: '',
+                email: '',
+                password: '',
+            }
         }
     },
     methods: {
         handleSubmit() {
-            if (!this.usernameError) {
-                axios.get('/sanctum/csrf-cookie').then(response => {
-                    axios.post('/register', this.form)
-                        .then(response => {
-                            this.$store.commit('authStore/setUser', response.data.user);
-                            this.$router.push('/dashboard');
-                        })
-                });
+            const hasErrors = Object.values(this.errors).some(error => error !== '');
+            if (!hasErrors) {
+                axios.post('/register', this.form)
+                    .then(response => {
+                        this.$store.commit('authStore/setUser', response.data.user);
+                        this.$router.push('/dashboard');
+                    })
+                    .catch(e => {
 
+                        if (e.response && e.response.data.errors.email) {
+                            this.errors.email = 'Email занят'
+                        }
+                        if (e.response && e.response.data.errors.name) {
+                            this.errors.username = 'Никнейм уже занят';
+                        }
+                    })
             }
         },
         checkNick() {
             const regex = /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/;
 
             if (!this.form.name) {
-                this.usernameError = 'Поле не может быть пустым';
+                this.errors.username = 'Поле не может быть пустым';
             } else if (!regex.test(this.form.name)) {
-                this.usernameError = 'Допустимы только буквы, цифры и одиночные дефисы';
+                this.errors.username = 'Допустимы только латинские буквы и цифры';
             } else {
-                this.usernameError = '';
+                this.errors.username = '';
+            }
+        },
+        checkPassword() {
+            const hasNumber = /\d/.test(this.form.password);
+            const hasLetter = /[a-zA-Z]/.test(this.form.password);
+            if (!this.form.password) {
+                this.errors.password = 'Поле не может быть пустым';
+            } else if (this.form.password.length < 8) {
+                this.errors.password = 'Пароль должен содержать больше 8 символов';
+            } else if (!hasNumber || !hasLetter) {
+                this.errors.password = 'Пароль должен содержать латинские буквы и цифры';
+            } else {
+                this.errors.password = '';
             }
         }
     },

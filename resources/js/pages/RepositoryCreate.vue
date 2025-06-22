@@ -9,14 +9,19 @@
                         <div class="user-name">
                             <div>{{ user.name }}</div><span class="slesh">/</span>
                         </div>
-                        <input type="text" name="name" v-model="form.name" class="input" placeholder="Название репозитория">
+                        <input type="text" name="name" v-model="form.name" @input="errors.name=''" class="input"
+                            placeholder="Название репозитория">
                     </div>
+
+                    <span class="hint">{{ `${domain}/${user.name}/${form.name}` }}</span>
+                    <div class="error" v-if="errors.name"><img class="alert" src="@/svg/alert.svg" /> {{
+                        errors.name }}</div>
                 </div>
                 <div class="container-textarea">
                     <div class="name-input">Описание</div>
                     <div class="container-path">
-                        <textarea ref="textarea" type="text" name="name" class="input textarea" v-model="form.description"
-                            @input="adjustTextareaHeight"></textarea>
+                        <textarea ref="textarea" type="text" name="name" class="input textarea"
+                            v-model="form.description" @input="adjustTextareaHeight"></textarea>
                     </div>
                 </div>
 
@@ -60,8 +65,11 @@ export default {
                 name: '',
                 description: '',
                 access: 'public',
-            }
-
+            },
+            errors: {
+                name: ''
+            },
+            domain: window.location.origin
         };
     },
     computed: {
@@ -75,9 +83,14 @@ export default {
         },
         async createRepository() {
             await axios.post('/projects', this.form)
-            .then(response=>{
-                this.$router.push(`/${response.data.owner_name}/${response.data.name}`)
-            })
+                .then(response => {
+                    this.$router.push(`/${response.data.owner_name}/${response.data.name}`)
+                })
+                .catch(e => {
+                    if (e.response && e.response.data.errors.name) {
+                        this.errors.name = 'Уже есть репозиторий с таким именем';
+                    }
+                })
         }
     },
     mounted() {
@@ -265,5 +278,24 @@ export default {
 
 .footer {
     margin-top: clamp(10px, 5vw, 100px);
+}
+
+
+.hint {
+    font-weight: 100;
+    font-size: 0.9vw;
+    color: #67707b;
+    display: block;
+    margin-top: 0.26vw;
+}
+
+.error {
+    gap: 0.6vw;
+    display: flex;
+    align-items: center;
+    font-weight: 100;
+    font-size: 0.83vw;
+    color: #FF0E0E;
+    margin-top: 0.26vw;
 }
 </style>

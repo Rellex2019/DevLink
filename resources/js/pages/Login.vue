@@ -6,10 +6,13 @@
             <form class="container-inputs" @submit.prevent="handleSubmit">
                 <label class="title-field">Email</label>
                 <input v-model="form.email" class="input" required type="email">
-                <label class="title-field" style="margin-top: 1.56vw;">Пароль <div class="forget">Забыли пароль?</div></label>
+                <label class="title-field" style="margin-top: 1.56vw;">Пароль 
+                    <!-- <div class="forget">Забыли пароль?</div> -->
+                </label>
                 <input v-model="form.password" class="input" required type="password">
                 <div class="error" v-if="error"><img class="alert" src="@/svg/alert.svg" /> Email или пароль введены неверно</div>
                 <button class="login-btn">Войти</button>
+                <router-link :to="{name: 'registration'}" class="create-acc"> Ещё нет аккаунта?</router-link>
             </form>
         </div>
     </div>
@@ -118,6 +121,16 @@ export default {
     color: #656A6F;
 }
 .forget:hover{
+    color: #EDB200;
+}
+.create-acc{
+    text-decoration: none;
+    margin-top: 1vw;
+    cursor: pointer;
+    font-size: 0.8vw;
+    color: #656A6F; 
+}
+.create-acc:hover{
     color: #EDB200;
 }
 .login-btn{

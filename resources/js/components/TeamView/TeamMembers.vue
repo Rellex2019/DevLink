@@ -37,7 +37,7 @@
                 </div>
                 <div class="active-btn-container" style="display: flex; flex: none; gap: 15px;">
                     <button class="leave-team-btn">Покинуть команду</button>
-                    <button class="add-team-btn" @click="openInviteModal">Добавить участника</button>
+                    <button class="add-team-btn" v-if="teamInfo.isOwner" @click="openInviteModal">Добавить участника</button>
                 </div>
             </div>
 

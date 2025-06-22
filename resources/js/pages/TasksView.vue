@@ -437,8 +437,18 @@ export default {
     display: flex;
     gap: 15px;
     margin-top: 40px;
+    padding-bottom: 15px;
 }
+.container-statuses::-webkit-scrollbar{
+    height: 6px;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+}
+.container-statuses::-webkit-scrollbar-thumb{
 
+    background-color: #343A40;
+    border-radius: 10px;
+}
 
 
 .modal-enter-active,

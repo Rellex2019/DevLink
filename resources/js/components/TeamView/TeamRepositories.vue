@@ -9,7 +9,7 @@
                 <button class="select-panel-btn" @click="accessFilter = 'private'"
                     :class="{ 'active': accessFilter === 'private' }">Приватные</button>
             </div>
-            <button class="select-panel-btn invites" @click="accessFilter = 'invites'"
+            <button v-if="teamInfo.isOwner" class="select-panel-btn invites" @click="accessFilter = 'invites'"
                 :class="{ 'active': accessFilter === 'invites' }">Приглашения</button>
         </div>
 
@@ -35,10 +35,13 @@
                 <div v-for="repository in filteredRepositories" :key="repository.id">
                     <div class="repository">
                         <div class="repository-info">
-                            <div class="repository-name" @click="goToRepository(repository)">{{ repository.owner_name
-                                + '/' }}<span>{{ repository.name }}</span>
+                            <div class="repository-name-container">
+                                <div class="repository-name" @click="goToRepository(repository)">
+                                    {{ repository.owner_name + '/' }}<span>{{ repository.name }}</span>
+                                </div>
+                                <div class="repository-access">{{ repository.access }}</div>
                             </div>
-                            <div class="repository-access">{{ repository.access }}</div>
+                            <button class="reject-btn" style="padding: 10px 15px;" @click="deleteRepository(repository)">Удалить</button>
                         </div>
                     </div>
                 </div>
@@ -95,7 +98,7 @@
 
             </div>
             <div v-if="inviteChapter == 'sent'">
-                <div v-if="sentInvites.length > 0" class="invites-block-container">
+                <div v-if="sentInvites.length > 0" class="invites-block-container" id="invites-block-container">
                     <div v-for="invite in sentInvites" :key="invite.id" class="container-invites">
                         <div class="repository invites-block">
                             <div style="display: flex; justify-content: space-between;">
@@ -104,7 +107,7 @@
                                         <img :src="invite.user.profile.avatar" alt="">
                                     </div>
                                     <div class="user-name" @click="$router.push(`/${invite.user.name}`)"><span>{{
-                                            invite.user.name }}</span>
+                                        invite.user.name }}</span>
                                     </div>
                                 </div>
                                 <div class="btn-container">
@@ -158,6 +161,19 @@ export default {
         }
     },
     methods: {
+        deleteRepository(repository)
+        {
+            const confirm = window.confirm(`Вы уверены что хотите отказаться от прав на редактирование репозитория ${repository.name}? `);
+            if(confirm)
+        {
+            axios.delete(`/project/${repository.id}/team/delete/${this.teamInfo.team.id}`)
+            .then(response=>{
+                this.teamInfo.projects = this.teamInfo.projects.filter(rep=>{
+                    return rep.id != repository.id
+                })
+            })
+        }
+        },
         fetchInvites() {
             axios.get(`/team/${this.teamInfo.team.id}/invite`)
                 .then(response => {
@@ -224,13 +240,13 @@ export default {
             axios.delete(`/team/${inviteId}/invite`)
                 .then(response => {
                     this.sentInvites = this.sentInvites.filter(i => {
-                        i.id != inviteId
+                        return i.id != inviteId
                     })
                 })
         },
         deleteFromInvites(id) {
             this.invites = this.invites.filter(i => {
-                i.id != id
+                return i.id != id
             })
         }
     },
@@ -561,11 +577,18 @@ export default {
 }
 
 .repository-info {
-
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 15px;
+    width: 100%;
 }
-
+.repository-name-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-grow: 1;
+}
 .repository-name {
     letter-spacing: 1px;
     cursor: pointer;
@@ -680,6 +703,7 @@ export default {
 }
 
 .reject-btn {
+    cursor: pointer;
     border: 1px solid #4B4F53;
     border-radius: 5px;
     background: none;
@@ -773,5 +797,13 @@ export default {
     font-size: 20px;
     display: flex;
     align-items: center;
+}
+
+
+
+
+
+#invites-block-container {
+    gap: 0;
 }
 </style>

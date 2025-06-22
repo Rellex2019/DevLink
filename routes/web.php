@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::get('/search/global', [UserController::class, 'searchAll']);
 
 Route::get('/user/search', [UserController::class, 'search']);
 Route::get('/user/{name}', [UserController::class, 'show']);
@@ -49,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{projectName}/teams/invites', [ProjectController::class, 'showInvites']);
         Route::post('/{projectName}/teams/invite', [ProjectController::class, 'inviteTeam']);
         Route::delete('/{projectName}/teams/invite/{teamId}', [ProjectController::class, 'deleteInviteTeam']);
+        Route::delete('/{project}/team/delete/{team}', [ProjectController::class, 'deleteTeam']);
+        Route::delete('/{project}/team/delete/{team}/name', [ProjectController::class, 'deleteTeamOnName']);
 
         Route::post('/{projectId}/file/create', [FileController::class, 'store']);
         Route::post('/{projectId}/folder/create', [FileController::class, 'storeFolder']);

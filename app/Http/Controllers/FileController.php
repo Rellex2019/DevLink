@@ -22,17 +22,27 @@ class FileController extends Controller
     {
         $project = Project::with('owner')
             ->whereHas('owner', function ($query) use ($username) {
-                $query->where('name', $username); // или 'username' в зависимости от структуры БД
+                $query->where('name', $username);
             })
             ->where('name', $projectName)
             ->first();
 
         $isOwner = $project->owner->id === $request->user()->id;
+        $isMember = $isOwner;
+        if (!$isMember && $project->teams->isNotEmpty()) {
+            foreach ($project->teams as $team) {
+                if ($team->users->contains(auth()->id())) {
+                    $isMember = true;
+                    break;
+                }
+            }
+        }
         $files = $this->fileService->getProjectFiles($project->id, $parentId);
         return response()->json([
             'files'=>$files,
             'project_id' => $project->id,
-            'isOwner' => $isOwner
+            'isOwner' => $isOwner,
+            'isMember' => $isMember
         ]);
     }
 

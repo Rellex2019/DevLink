@@ -65,6 +65,14 @@ class ProjectController extends Controller
             'description' => 'nullable|string',
             'access' => ['required', Rule::in(['private', 'public'])]
         ]);
+        if (Project::whereRaw('LOWER(name) = ?', [strtolower($request->name)])->exists()) {
+            return response()->json([
+                'message' => 'Это имя проекта уже используется (без учета регистра).',
+                'errors' => [
+                    'name' => ['Это имя проекта уже используется (без учета регистра).']
+                ]
+            ], 422);
+        }
 
         $project = Project::create([
             ...$validated,
@@ -276,4 +284,20 @@ class ProjectController extends Controller
         ]);
     }
 
+
+    public function deleteTeam(Project $project, Team $team)
+    {
+        $project->teams()->detach($team);
+        return response()->json([
+            'message'=> 'Команда успешно удалена из репозитория'
+        ]);
+    }
+    public function deleteTeamOnName($projectName, Team $team)
+    {
+        $project = Project::where('name', $projectName)->first();
+        $project->teams()->detach($team);
+        return response()->json([
+            'message'=> 'Команда успешно удалена из репозитория'
+        ]);
+    }
 }

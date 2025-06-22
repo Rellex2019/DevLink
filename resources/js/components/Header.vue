@@ -6,7 +6,7 @@
                 <p class="logo-name">Dev<span>Link</span></p>
             </div>
             <div class="container-tools">
-                <Search :animated='true' w=260 placeholderText="Найти друзей, репозитории" />
+                <Search  @write-input="handleSearchInput" @enter-input="$router.push({name: 'search', query:{'query': searchQuery}})"  :animated='true' w=260 placeholderText="Найти друзей, репозитории" />
                 <div class="container-btns" v-if="!isAuthenticated">
                     <button @click="$router.push({ name: 'login' })" class="login">Войти</button>
                     <button @click="$router.push({ name: 'registration' })" class="singup">Зарегистрироваться</button>
@@ -79,6 +79,11 @@
 
                     </div>
                     <Modal :isVisible="isNotificationVisible" class="modal-notify">
+                        <div v-if="notifications.length == 0" class="option-notify">
+                            <p>
+                                У вас нет входящих уведомлений
+                            </p>
+                        </div>
                         <div class="option-notify" v-for="notify in notifications" :key="notify.id">
                             <p v-if="notify.type === 'inviteTeam'"
                                 @click.self="$router.push(`/${notify.data.user.name}`)">
@@ -99,7 +104,7 @@
                                     @click="$router.push(`/${notify.data.sender.name}`)">{{ notify.data.sender.name
                                     }}</span> предлагает присоедениться к разработке репозитория <span class="selection"
                                     @click="$router.push(`/${notify.data.project.owner_name}/${notify.data.project.name}`)">{{
-                                    notify.data.project.name }}</span>
+                                        notify.data.project.name }}</span>
                             </p>
                         </div>
                     </Modal>
@@ -153,7 +158,7 @@ export default {
             isPersonVisible: false,
             isNotificationVisible: false,
 
-
+            searchQuery: '',
             subtitleItems: null,
             notifyCount: 0,
             notifications: []
@@ -184,6 +189,9 @@ export default {
                 window.removeEventListener('focusin', this.handleClick);
             }
         },
+        handleSearchInput(text) {
+            this.searchQuery = text;
+        },
         async exitFromAccount() {
             await axios.get("/logout").then((response) => {
                 this.$router.push("/login");
@@ -201,9 +209,14 @@ export default {
                         { name: 'Код', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}` },
                         { name: 'Задачи', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/tasks` },
                         { name: 'Настройки', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/settings` }
-                    ] : [
+                    ] 
+                    : repositoryInfo.isMember ?
+                    [
                         { name: 'Код', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}` },
-                        { name: 'Задачи', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/tasks` }
+                        { name: 'Задачи', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}/tasks` },
+                    ] :
+                    [
+                        { name: 'Код', url: `/${this.$route.params.user}/${this.$route.params.repositoryName}` },
                     ];
                 } catch (error) {
                     console.error(error);
@@ -211,11 +224,16 @@ export default {
             } else if (this.$route.params.team && this.$route.name == 'team') {
                 const response = await axios.get(`/team/${this.$route.params.team}/get`);
                 const teamInfo = response.data;
-                this.subtitleItems = teamInfo.isMember ? [
+                this.subtitleItems = teamInfo.isOwner ? [
                     { name: 'Участники', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
                     { name: 'Репозитории', query: 'repository', url: `${this.$route.params.team}?chapter=repository` },
                     { name: 'Настройки', query: 'settings', url: `${this.$route.params.team}?chapter=settings` }
-                ] : [
+                ] 
+                : teamInfo.isMember? [
+                    { name: 'Участники', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
+                    { name: 'Репозитории', query: 'repository', url: `${this.$route.params.team}?chapter=repository` },
+                ] :
+                [
                     { name: 'Обзор команды', query: 'peoples', url: `${this.$route.params.team}?chapter=peoples` },
                 ];
             }
