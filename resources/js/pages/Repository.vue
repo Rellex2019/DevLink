@@ -361,13 +361,10 @@ function contentFileShow(content, id) {
     selectedFile.value = id;
 }
 async function contentFileUpdate(content, id) {
-    if (isMember.value) {
         await axios.put(`/project/${projectId.value}/file/update/${id}`, { 'content': content })
             .then(response => {
                 updatedContent.value[id] = content;
             })
-    }
-
 }
 //............................................
 

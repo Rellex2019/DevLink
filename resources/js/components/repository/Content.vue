@@ -10,16 +10,16 @@ const props = defineProps({
   content: String,
   language: {
     type: String,
-    default: 'plaintext' 
+    default: 'plaintext'
   },
-  isMember: Boolean, 
+  isMember: Boolean,
   id: Number
 });
 
 const emit = defineEmits(['update-content']);
 const editorContainer = ref(null);
 let editor = null;
-let monacoInstance = null; 
+let monacoInstance = null;
 let debounceTimer = null;
 const DEBOUNCE_DELAY = 3000;
 let currentId = ref(null);
@@ -53,26 +53,24 @@ onMounted(async () => {
       fontSize: 18,
       automaticLayout: true,
       tabSize: 4,
-      readOnly: !props.isMember 
+      readOnly: !props.isMember
     });
 
     currentId.value = props.id;
 
 
-    if (props.isMember) {
-      editor.onDidChangeModelContent(() => {
-        hasUnsavedChanges.value = true;
+    editor.onDidChangeModelContent(() => {
+      hasUnsavedChanges.value = true;
 
-        if (debounceTimer) {
-          clearTimeout(debounceTimer);
-        }
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
 
-        debounceTimer = setTimeout(() => {
-          saveContent(currentId.value);
-          hasUnsavedChanges.value = false;
-        }, DEBOUNCE_DELAY);
-      });
-    }
+      debounceTimer = setTimeout(() => {
+        saveContent(currentId.value);
+        hasUnsavedChanges.value = false;
+      }, DEBOUNCE_DELAY);
+    });
   } catch (error) {
     console.error('Failed to initialize Monaco Editor:', error);
   }
@@ -85,14 +83,12 @@ watch(() => props.isMember, (newValue) => {
 });
 
 function saveContent(id) {
-  if (editor && props.isMember) { 
     const value = editor.getValue();
     emit('update-content', value, id);
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
     }
-  }
 }
 
 watch(() => props.language, (newLang) => {
@@ -109,10 +105,8 @@ watch(() => props.language, (newLang) => {
 });
 
 watch(() => props.id, (newId, oldId) => {
-  if (oldId && editor && hasUnsavedChanges.value && props.isMember) { 
     saveContent(oldId);
     hasUnsavedChanges.value = false;
-  }
 
   currentId.value = newId;
   if (editor) {
