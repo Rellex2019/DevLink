@@ -99,7 +99,7 @@ watch(() => props.language, (newLang) => {
         monacoInstance.editor.setModelLanguage(model, getMonacoLanguage(newLang));
       } catch (e) {
         console.error('Ошибка в смене языка программирования:', e);
-      }
+      }g
     }
   }
 });
