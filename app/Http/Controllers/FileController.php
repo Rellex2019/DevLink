@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreFileRequest;
 use App\Http\Requests\StoreFolderRequest;
 use App\Models\Project;
+use App\Models\User;
 use App\Services\FileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class FileController extends Controller
 {
@@ -18,33 +21,87 @@ class FileController extends Controller
         $this->fileService = $fileService;
     }
 
-    public function index(Request $request, string $username, string $projectName, ?int $parentId = null): JsonResponse
-    {
-        $project = Project::with('owner')
-            ->whereHas('owner', function ($query) use ($username) {
-                $query->where('name', $username);
-            })
-            ->where('name', $projectName)
-            ->first();
 
-        $isOwner = $project->owner->id === $request->user()->id;
-        $isMember = $isOwner;
-        if (!$isMember && $project->teams->isNotEmpty()) {
-            foreach ($project->teams as $team) {
-                if ($team->users->contains(auth()->id())) {
-                    $isMember = true;
-                    break;
-                }
-            }
-        }
-        $files = $this->fileService->getProjectFiles($project->id, $parentId);
+    public function index(Request $request, string $username, string $projectName, ?int $parentId = null): JsonResponse
+{
+    $projectCacheKey = "project:{$username}:{$projectName}";
+    $filesCacheKey = "files:{$projectName}:{$parentId}";
+
+    try {
+        $project = $this->getCachedProject($projectCacheKey, $username, $projectName);
+        
+        $files = $this->getCachedFiles($filesCacheKey, $project, $parentId);
+
+        $isOwner = $request->user()?->id === $this->resolveProjectOwnerId($project);
+        $isMember = $isOwner || $this->checkProjectMembership($request->user(), $project);
+
         return response()->json([
-            'files'=>$files,
-            'project_id' => $project->id,
+            'files' => $files,
+            'project_id' => $this->resolveProjectId($project),
             'isOwner' => $isOwner,
             'isMember' => $isMember
-        ]);
+        ], 200, [], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+
+    } catch (\Exception $e) {
+        Log::error("ProjectController error: " . $e->getMessage());
+        return response()->json(['error' => 'Server error'], 500);
     }
+}
+
+protected function getCachedProject(string $key, string $username, string $projectName)
+{
+    $project = Cache::get($key);
+
+    if (!$project) {
+        return Cache::lock("lock:{$key}", 10)->block(5, function () use ($key, $username, $projectName) {
+            return Cache::remember($key, now()->addHour(), function () use ($username, $projectName) {
+                $project = Project::with(['owner:id,name', 'teams.users:id'])
+                    ->whereHas('owner', fn($q) => $q->where('name', $username))
+                    ->where('name', $projectName)
+                    ->firstOrFail();
+
+                return $project->toArray(); 
+            });
+        });
+    }
+
+    return is_array($project) ? $project : unserialize($project);
+}
+
+protected function getCachedFiles(string $key, $project, ?int $parentId)
+{
+    return Cache::remember($key, now()->addSeconds(15), function () use ($project, $parentId) {
+        return $this->fileService->getProjectFiles(
+            $this->resolveProjectId($project), 
+            $parentId
+        );
+    });
+}
+
+protected function resolveProjectId($project): int
+{
+    return is_array($project) ? $project['id'] : $project->id;
+}
+
+protected function resolveProjectOwnerId($project): int
+{
+    return is_array($project) ? $project['owner']['id'] : $project->owner->id;
+}
+
+protected function checkProjectMembership(?User $user, $project): bool
+{
+    if (!$user) return false;
+
+    if (is_array($project)) {
+        return collect($project['teams'] ?? [])
+            ->pluck('users')
+            ->collapse()
+            ->contains('id', $user->id);
+    }
+
+    return $project->teams->pluck('users')->collapse()->contains('id', $user->id);
+}
+
 
     public function storeFolder(StoreFolderRequest $request, int $projectId): JsonResponse
     {
@@ -66,7 +123,7 @@ class FileController extends Controller
     public function updateObject(Request $request, int $projectId, int $fileId)
     {
         $request->validate(['name' => 'required|string']);
-        
+
         $file = $this->fileService->updateFile($fileId, $request->all());
         return response()->json($file);
     }
@@ -86,7 +143,7 @@ class FileController extends Controller
 
         return response()->json($file);
     }
-    
+
 
     public function destroy(int $projectId, int $fileId): JsonResponse
     {

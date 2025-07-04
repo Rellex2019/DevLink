@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -18,26 +19,31 @@ class UserController extends Controller
     const MAX_LINKS = 4;
     public function show($name, Request $request)
     {
-        $user = User::where('name', $name)->firstOrFail();
-        $user->load(['profile']);
-        $user->profile->makeHidden('user');
-        $currentUserId = $request->header('X-Current-User-Id');
-        $isOwner = !is_null($currentUserId) && $user->id == $currentUserId;
+        $userCacheKey = "user:{$name}";
+        $user = Cache::remember($userCacheKey, now()->addMinutes(15), function () use ($name, $request) {
+            $user = User::where('name', $name)->firstOrFail();
+            $user->load(['profile']);
+            $user->profile->makeHidden('user');
+            $currentUserId = $request->header('X-Current-User-Id');
+            $isOwner = !is_null($currentUserId) && $user->id == $currentUserId;
 
-        $user->setRelation('projects', $user->projects()
-            ->where(function ($query) use ($isOwner) {
-                $query->where('access', 'public');
-                if ($isOwner) {
-                    $query->orWhere('access', 'private');
-                }
-            })
-            ->get());
+            $user->setRelation('projects', $user->projects()
+                ->where(function ($query) use ($isOwner) {
+                    $query->where('access', 'public');
+                    if ($isOwner) {
+                        $query->orWhere('access', 'private');
+                    }
+                })
+                ->get());
 
-        $user->profile->load(['links' => function ($query) {
-            $query->select('links.id', 'links.name', 'links.url as link');
-        }]);
-        $user->load(['teams']);
-        $user->isOwner = $isOwner;
+            $user->profile->load(['links' => function ($query) {
+                $query->select('links.id', 'links.name', 'links.url as link');
+            }]);
+            $user->load(['teams']);
+            $user->isOwner = $isOwner;
+            return $user;
+        });
+
 
         return response()->json($user);
     }

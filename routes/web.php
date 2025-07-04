@@ -20,6 +20,11 @@ Route::get('/team/teams', [TeamController::class, 'index']);
 Route::get('/team/{teamName}/get', [TeamController::class, 'show']);
 Route::get('/teams/search', [TeamController::class, 'search']);
 
+
+
+Route::get('/files/{username}/{projectName}', [FileController::class, 'index']);
+
+
 Route::middleware('auth:sanctum')->group(function () {
 
  
@@ -69,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/setting/{project}', [ProjectController::class, 'destroyRepository']);
     });
 
-    Route::get('/files/{username}/{projectName}', [FileController::class, 'index']);
+    
     //Task
     Route::prefix('projects/{projectName}/owner/{userName}/team/{teamName}')->group(function () {
         Route::get('/', [TaskController::class, 'show']);
