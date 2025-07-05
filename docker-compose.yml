@@ -1,5 +1,25 @@
-
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: devlink
+      MYSQL_USER: devlink_user
+      MYSQL_PASSWORD: secret
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
   app:
     build:
       context: .
@@ -10,12 +30,17 @@ services:
     volumes:
       - ./:/var/www
     environment:
-      - DB_CONNECTION=sqlite
-      - DB_DATABASE=/var/www/database/database.sqlite
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=devlink
+      - DB_USERNAME=devlink_user
+      - DB_PASSWORD=secret
       - REDIS_HOST=redis
     networks:
       - backend
     depends_on:
+      - mysql
       - redis
 
   node:
@@ -32,8 +57,9 @@ services:
       && npm install
       && npm run dev"
     ports:
-      - "5173:5173" 
-      
+      - "5173:5173"
+    networks:
+      - backend
 
   webserver:
     image: nginx:alpine
@@ -50,11 +76,11 @@ services:
     depends_on:
       - app
       - reverb
-  
+
   reverb:
     build:
       context: .
-      dockerfile: ./docker/backend/Dockerfile 
+      dockerfile: ./docker/backend/Dockerfile
     container_name: laravel_reverb
     restart: unless-stopped
     working_dir: /var/www
@@ -63,6 +89,12 @@ services:
     environment:
       - APP_ENV=local
       - BROADCAST_DRIVER=reverb
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=devlink
+      - DB_USERNAME=devlink_user
+      - DB_PASSWORD=secret
       - REVERB_APP_ID=707813
       - REVERB_APP_KEY=kthmg3yuzm809ipzncae
       - REVERB_APP_SECRET=fzelmm9eg2mg9nrqowcp
@@ -74,6 +106,9 @@ services:
       sh -c "php artisan reverb:start & php artisan queue:work"
     networks:
       - backend
+    depends_on:
+      - mysql
+
   redis:
     image: redis:alpine
     container_name: redis
@@ -91,7 +126,10 @@ services:
 
 networks:
   backend:
-    driver: bridge
-
+    external: true
+    
 volumes:
+  mysql_data:
+    driver: local
   redis_data:
+    driver: local

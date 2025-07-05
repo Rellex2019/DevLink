@@ -5,11 +5,12 @@ RUN apk update && apk add \
     libzip-dev \
     zip \
     unzip \
-    sqlite \
-    sqlite-dev \
-    curl
+    mysql-client \
+    mysql-dev \
+    curl \
+    git
 
-RUN docker-php-ext-install pdo pdo_sqlite pcntl
+RUN docker-php-ext-install pdo pdo_mysql pcntl zip
 
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && pecl install redis \
@@ -24,7 +25,6 @@ COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs \
-    && touch database/database.sqlite \
     && chmod -R 777 storage bootstrap/cache
 
 # Явно указываем конфиг FPM
