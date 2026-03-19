@@ -16,7 +16,7 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && docker-php-ext-enable redis \
     && apk del .build-deps
 
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 COPY . .
@@ -27,7 +27,6 @@ RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs \
     && touch database/database.sqlite \
     && chmod -R 777 storage bootstrap/cache
 
-# Явно указываем конфиг FPM
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 
 CMD ["php-fpm", "-R"]
